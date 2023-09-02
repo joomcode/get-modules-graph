@@ -1,6 +1,6 @@
 {
   "name": "get-modules-graph",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Get and traverse graph of ECMAScript/TypeScript modules",
   "author": "uid11",
   "bugs": "https://github.com/uid11/get-modules-graph/issues",

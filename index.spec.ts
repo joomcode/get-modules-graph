@@ -29,7 +29,9 @@ const modulesGraphPromise = getModulesGraph<number>({
       return 'index.ts';
     }
 
-    throw new Error(`Cannot choose index module in directory ${directoryPath} for ${resolvedPath}`);
+    throw new Error(
+      `Cannot choose index module in directory \`${directoryPath}\` for \`${resolvedPath}\``,
+    );
   },
   chooseModule: (resolvedPath, parsedPath, directoryContent) => {
     const fileName = `${parsedPath.base}.ts`;
@@ -38,7 +40,7 @@ const modulesGraphPromise = getModulesGraph<number>({
       return fileName;
     }
 
-    throw new Error(`Cannot choose module for ${resolvedPath}`);
+    throw new Error(`Cannot choose module for \`${resolvedPath}\``);
   },
   directories: [],
   modules: ['./index.ts'],

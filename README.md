@@ -11,6 +11,8 @@ Get and traverse graph of ECMAScript/TypeScript modules.
 ## Basic example
 
 ```ts
+import {dirname, join, sep} from 'node:path';
+
 import {getModulesGraph} from 'get-modules-graph';
 
 const modulesGraph = await getModulesGraph<number>({
@@ -19,7 +21,9 @@ const modulesGraph = await getModulesGraph<number>({
       return 'index.ts';
     }
 
-    throw new Error(`Cannot choose index module in directory ${directoryPath} for ${resolvedPath}`);
+    throw new Error(
+      `Cannot choose index module in directory \`${directoryPath}\` for \`${resolvedPath}\``,
+    );
   },
   chooseModule: (resolvedPath, parsedPath, directoryContent) => {
     const fileName = `${parsedPath.base}.ts`;
@@ -28,7 +32,7 @@ const modulesGraph = await getModulesGraph<number>({
       return fileName;
     }
 
-    throw new Error(`Cannot choose module for ${resolvedPath}`);
+    throw new Error(`Cannot choose module for \`${resolvedPath}\``);
   },
   directories: [],
   modules: ['./index.ts'],

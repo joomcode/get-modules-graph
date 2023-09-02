@@ -58,7 +58,7 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
     const normalizedPath: PackagePath | ResolvedPath = normalize(resolvedPath);
 
-    resolvedPaths[rawPath] = normalizedPath;
+    resolvedPaths[rawPath] = resolvedPath;
 
     if (resolvedPath[0] === '.') {
       tasks.push(processImportModule(context, module, rawPath, normalizedPath));
