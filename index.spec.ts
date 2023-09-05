@@ -75,6 +75,10 @@ Promise.all([modulesGraphPromise]).then(([modulesGraph]) => {
       assert(false, 'gets modules without errors and warnings');
     }
 
+    if (!(module.uncompletedDependenciesCount >= 0)) {
+      assert(false, 'all modules have uncompleted dependencies counter');
+    }
+
     if (module.expectedExports) {
       if (Object.keys(module.exports!).length !== Object.keys(module.expectedExports).length) {
         assert(false, 'gets modules without errors and warnings');

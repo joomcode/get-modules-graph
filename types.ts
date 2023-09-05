@@ -134,6 +134,7 @@ export type Module<SourceData = unknown, DependenciesData = unknown> = {
   reexportedByModules?: Record<ModulePath, Record<RawPath, true>>;
   reexportedModules?: Record<ModulePath, Record<RawPath, true>>;
   reexportedPackages?: Record<PackagePath, Record<RawPath, true>>;
+  uncompletedDependenciesCount: number;
   warnings?: Record<number, string>;
 } & MergedImportsExports &
   (IsEqual<DependenciesData, unknown> extends true ? {} : {dependenciesData: DependenciesData}) &
@@ -185,8 +186,8 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
    */
   modules: readonly string[];
   /**
-   * The callback on adding dependencies to a module.
-   * Called when all module dependencies have been recursively added.
+   * The callback on completing (adding) dependencies to a module.
+   * Called when all module dependencies have been recursively completed.
    * Always called before the `onAddModule` callback.
    * Should return the data obtained from the dependencies of the module,
    * which will be stored in the `dependenciesData` module field.

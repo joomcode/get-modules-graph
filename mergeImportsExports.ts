@@ -403,7 +403,7 @@ export const mergeImportsExports = (
     module.reexports = reexports;
   }
 
-  if (errors) {
+  if (errors !== undefined) {
     module.parseErrors = errors;
   }
 };

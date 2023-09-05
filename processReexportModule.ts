@@ -1,3 +1,4 @@
+import {completeDependency} from './completeDependency';
 import {processResolvedPath} from './processResolvedPath';
 import {addWarning} from './utils';
 
@@ -18,10 +19,16 @@ export const processReexportModule = async (
   if (reexportedModule instanceof Error) {
     reexportObject.moduleResolveError = reexportedModule;
 
+    completeDependency(context, module);
+
     return;
   }
 
   reexportObject.modulePath = reexportedModule.path;
+
+  if (reexportedModule.uncompletedDependenciesCount === 0) {
+    completeDependency(context, module);
+  }
 
   let {reexportedModules} = module;
 

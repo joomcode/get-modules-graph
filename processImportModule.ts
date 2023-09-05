@@ -1,3 +1,4 @@
+import {completeDependency} from './completeDependency';
 import {processResolvedPath} from './processResolvedPath';
 import {addWarning} from './utils';
 
@@ -18,10 +19,16 @@ export const processImportModule = async (
   if (importedModule instanceof Error) {
     importObject.moduleResolveError = importedModule;
 
+    completeDependency(context, module);
+
     return;
   }
 
   importObject.modulePath = importedModule.path;
+
+  if (importedModule.uncompletedDependenciesCount === 0) {
+    completeDependency(context, module);
+  }
 
   let {importedModules} = module;
 

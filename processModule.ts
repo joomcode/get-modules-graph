@@ -8,7 +8,7 @@ import {processImportModule} from './processImportModule';
 import {processImportPackage} from './processImportPackage';
 import {processReexportModule} from './processReexportModule';
 import {processReexportPackage} from './processReexportPackage';
-import {waitTasks} from './utils';
+import {addError, waitTasks} from './utils';
 
 import type {Context, ModulePath, Module, PackagePath, RawPath, ResolvedPath} from './types';
 
@@ -18,13 +18,16 @@ const READ_FILE_OPTIONS = {encoding: 'utf8'} as const;
  * Processes module by module path.
  */
 export const processModule = async (context: Context, modulePath: ModulePath): Promise<Module> => {
-  const {onAddModule, modules, resolvePath} = context;
+  const {onAddDependencies, onAddModule, modules, resolvePath} = context;
 
   if (modulePath in modules) {
     return modules[modulePath]!;
   }
 
-  const module: Module & {sourceData?: unknown} = {path: modulePath};
+  const module: Module & {dependenciesData?: unknown; sourceData?: unknown} = {
+    path: modulePath,
+    uncompletedDependenciesCount: 0,
+  };
 
   let resolve: ((module: Module) => void) | undefined;
 
@@ -33,7 +36,7 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
   });
 
   const source = await readFile(modulePath, READ_FILE_OPTIONS).catch((error) => {
-    module.errors = {0: `Cannot read module by path \`${modulePath}\`: ${error}`};
+    addError(module, `Cannot read module by path \`${modulePath}\`: ${error}`, 0);
 
     return '';
   });
@@ -42,6 +45,9 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
   mergeImportsExports(module, importsExports);
 
+  // cannot use `uncompletedDependenciesCount > 0` instead, because `processImportModule`/`processReexportModule`
+  // calls can synchronously return `uncompletedDependenciesCount` to 0
+  let hasDependencies = false;
   const resolvedPaths: Record<RawPath, string | undefined> = {__proto__: null} as {};
   const tasks: Promise<unknown>[] = [];
 
@@ -61,6 +67,9 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
     resolvedPaths[rawPath] = resolvedPath;
 
     if (resolvedPath[0] === '.') {
+      hasDependencies = true;
+      module.uncompletedDependenciesCount += 1;
+
       tasks.push(processImportModule(context, module, rawPath, normalizedPath));
     } else {
       processImportPackage(context, module, rawPath, normalizedPath);
@@ -81,6 +90,9 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
     const normalizedPath = normalize(resolvedPath);
 
     if (resolvedPath[0] === '.') {
+      hasDependencies = true;
+      module.uncompletedDependenciesCount += 1;
+
       tasks.push(processReexportModule(context, module, rawPath, normalizedPath));
     } else {
       processReexportPackage(context, module, rawPath, normalizedPath);
@@ -89,13 +101,27 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
   waitTasks(context, tasks);
 
-  const sourceData = onAddModule(module, source) as {then?: unknown};
+  const sourceData = onAddModule(module, source) as {then?: unknown} | undefined;
 
   if (typeof sourceData?.then === 'function') {
     return sourceData.then((data: unknown) => {
       module.sourceData = data;
       modules[modulePath] = module;
       resolve!(module);
+
+      if (hasDependencies === false) {
+        const dependenciesData = onAddDependencies(module) as {then?: unknown} | undefined;
+
+        if (typeof dependenciesData?.then === 'function') {
+          return dependenciesData.then((data: unknown) => {
+            module.dependenciesData = data;
+
+            return module;
+          });
+        }
+
+        module.dependenciesData = dependenciesData;
+      }
 
       return module;
     });
@@ -104,6 +130,20 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
   module.sourceData = sourceData;
   modules[modulePath] = module;
   resolve!(module);
+
+  if (hasDependencies === false) {
+    const dependenciesData = onAddDependencies(module) as {then?: unknown} | undefined;
+
+    if (typeof dependenciesData?.then === 'function') {
+      return dependenciesData.then((data: unknown) => {
+        module.dependenciesData = data;
+
+        return module;
+      });
+    }
+
+    module.dependenciesData = dependenciesData;
+  }
 
   return module;
 };
