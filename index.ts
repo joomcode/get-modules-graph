@@ -1,5 +1,6 @@
 import {normalize} from 'node:path';
 
+import {processCircularDependencies} from './processCircularDependencies';
 import {processModule} from './processModule';
 import {waitTasks} from './utils';
 
@@ -16,15 +17,17 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
   onAddModule,
   resolvePath,
 }: Options<SourceData, DependenciesData>): Promise<Graph<SourceData, DependenciesData>> => {
+  const circularDependencies: ModulePath[][] = [];
   const errors: Error[] = [];
   const modules = {__proto__: null} as unknown as Context['modules'];
   const packages = {__proto__: null} as unknown as Context['packages'];
 
-  const graph: Graph = {errors, modules, packages};
+  const graph: Graph = {circularDependencies, errors, modules, packages};
 
   const context: Context = {
     chooseIndexModule,
     chooseModule,
+    circularDependencies,
     completedTasksCount: 0,
     directories: {__proto__: null} as unknown as Context['directories'],
     errors,
@@ -41,7 +44,13 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
 
   const promise = new Promise<Graph<SourceData, DependenciesData>>((resolve) => {
     context.resolve = resolve as Context['resolve'];
-  });
+  }).finally(() => processCircularDependencies(context));
+
+  if (initialModules.length === 0) {
+    context.resolve(graph);
+
+    return promise;
+  }
 
   const normalizedModules: readonly ModulePath[] = initialModules.map(normalize);
 

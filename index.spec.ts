@@ -23,6 +23,18 @@ ok(`Build passed in ${startTestsTime - Number(process.env._START)}ms!`);
 
 assert(typeof getModulesGraph === 'function', 'getModulesGraph is a function');
 
+const emptyGraphPromise = getModulesGraph({
+  chooseIndexModule: () => '',
+  chooseModule: () => '',
+  directories: [],
+  modules: [],
+  onAddDependencies: () => {},
+  onAddModule: () => {},
+  resolvePath: () => '',
+  skipDirectory: () => false,
+  skipModule: () => false,
+});
+
 const modulesGraphPromise = getModulesGraph<number>({
   chooseIndexModule: (resolvedPath, directoryPath, directoryContent) => {
     if ('index.ts' in directoryContent) {
@@ -57,7 +69,12 @@ const modulesGraphPromise = getModulesGraph<number>({
   skipModule: () => false,
 });
 
-Promise.all([modulesGraphPromise]).then(([modulesGraph]) => {
+Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modulesGraph]) => {
+  assert(emptyGraph.errors.length === 0, 'gets empty graph without errors');
+  assert(Object.keys(emptyGraph.modules).length === 0, 'empty graph has no modules');
+
+  assert(modulesGraph.circularDependencies.length === 2, 'finds all circular dependencies');
+
   assert(modulesGraph.errors.length === 0, 'gets graph without errors');
 
   assert('processImportPackage.ts' in modulesGraph.modules, 'gets modules by imports');

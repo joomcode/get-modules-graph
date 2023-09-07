@@ -52,6 +52,7 @@ type Position = {start: number; end: number};
 export type Context = Readonly<{
   chooseIndexModule: Options['chooseIndexModule'];
   chooseModule: Options['chooseModule'];
+  circularDependencies: ModulePath[][];
   directories: Record<DirectoryPath, DirectoryContent | Error | Promise<DirectoryContent | Error>>;
   errors: Error[];
   graph: Graph;
@@ -88,6 +89,7 @@ export type Export =
  * Mutable base type of modules graph.
  */
 export type Graph<SourceData = unknown, DependenciesData = unknown> = {
+  circularDependencies: readonly (readonly ModulePath[])[];
   errors: readonly Error[];
   modules: Modules<SourceData, DependenciesData>;
   packages: Packages;

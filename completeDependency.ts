@@ -2,24 +2,34 @@ import {addError, waitTasks} from './utils';
 
 import type {Context, Module} from './types';
 
-const completeNextDependency = (context: Context, modulesToComplete: Module[]): void => {
+const completeNextDependency = (
+  context: Context,
+  modulesToComplete: Module[],
+  outerTasks?: Promise<void>[],
+): void => {
   const {errors, modules, onAddDependencies} = context;
-  const tasks: Promise<void>[] = [];
+  const tasks = outerTasks || [];
 
   while (modulesToComplete.length > 0) {
     const module: Module & {dependenciesData?: unknown} = modulesToComplete.shift()!;
 
-    if (module.uncompletedDependenciesCount === 0) {
-      addError(
-        module,
-        'Unable to complete a module dependency because all of its dependencies have already been completed',
-        0,
-      );
+    if (outerTasks === undefined) {
+      if (module.uncompletedDependenciesCount === 0) {
+        addError(
+          module,
+          'Unable to complete a module dependency because all of its dependencies have already been completed',
+          0,
+        );
 
+        continue;
+      }
+
+      module.uncompletedDependenciesCount -= 1;
+    } else if (module.uncompletedDependenciesCount === 0) {
       continue;
+    } else {
+      module.uncompletedDependenciesCount -= 1;
     }
-
-    module.uncompletedDependenciesCount -= 1;
 
     if (module.uncompletedDependenciesCount > 0) {
       continue;
@@ -40,8 +50,8 @@ const completeNextDependency = (context: Context, modulesToComplete: Module[]): 
 
       const importsByRawPaths = importedByModules[modulePath]!;
 
-      if (typeof (parentModule as {then?: unknown}).then === 'function') {
-        const task = (parentModule as {then: Function}).then((resolvedModule: Module) =>
+      if (parentModule instanceof Promise) {
+        const task = parentModule.then((resolvedModule: Module) =>
           completeDependency(context, resolvedModule),
         );
 
@@ -72,8 +82,8 @@ const completeNextDependency = (context: Context, modulesToComplete: Module[]): 
 
       const reexportsByRawPaths = reexportedByModules[modulePath]!;
 
-      if (typeof (parentModule as {then?: unknown}).then === 'function') {
-        const task = (parentModule as {then: Function}).then((resolvedModule: Module) =>
+      if (parentModule instanceof Promise) {
+        const task = parentModule.then((resolvedModule: Module) =>
           completeDependency(context, resolvedModule),
         );
 
@@ -102,14 +112,20 @@ const completeNextDependency = (context: Context, modulesToComplete: Module[]): 
     }
   }
 
-  waitTasks(context, tasks);
+  if (outerTasks === undefined) {
+    waitTasks(context, tasks);
+  }
 };
 
 /**
  * Completes one dependency of module.
  */
-export const completeDependency = (context: Context, module: Module): void => {
+export const completeDependency = (
+  context: Context,
+  module: Module,
+  tasks?: Promise<void>[],
+): void => {
   const modulesToComplete: Module[] = [module];
 
-  completeNextDependency(context, modulesToComplete);
+  completeNextDependency(context, modulesToComplete, tasks);
 };
