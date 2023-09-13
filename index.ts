@@ -22,7 +22,12 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
   const modules = {__proto__: null} as unknown as Context['modules'];
   const packages = {__proto__: null} as unknown as Context['packages'];
 
-  const graph: Graph = {circularDependencies, errors, modules, packages};
+  const graph: Graph = {
+    circularDependencies,
+    errors,
+    modules: modules as Graph<SourceData, DependenciesData>['modules'],
+    packages,
+  };
 
   const context: Context = {
     chooseIndexModule,
@@ -60,5 +65,7 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
 
   return promise;
 };
+
+export {resolveImports} from './resolveImports';
 
 export type {Graph, Module, Package} from './types';

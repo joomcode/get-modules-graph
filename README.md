@@ -49,6 +49,7 @@ const modulesGraph = await getModulesGraph<number>({
   skipModule: () => false,
 });
 
+console.log(modulesGraph.circularDependencies);
 console.log(modulesGraph.errors);
 console.log(modulesGraph.modules);
 console.log(modulesGraph.packages);

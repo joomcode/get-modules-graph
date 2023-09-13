@@ -29,14 +29,6 @@ type IsEqual<X, Y> = (<Type>() => Type extends X ? 1 : 2) extends <Type>() => Ty
   : false;
 
 /**
- * Mutable modules object for internal functions.
- */
-type Modules<SourceData = unknown, DependenciesData = unknown> = Record<
-  ModulePath,
-  Module<SourceData, DependenciesData> | Promise<Module<SourceData, DependenciesData>>
->;
-
-/**
  * Mutable packages object for internal functions.
  */
 type Packages = Record<PackagePath, Package>;
@@ -56,7 +48,7 @@ export type Context = Readonly<{
   directories: Record<DirectoryPath, DirectoryContent | Error | Promise<DirectoryContent | Error>>;
   errors: Error[];
   graph: Graph;
-  modules: Modules;
+  modules: Record<ModulePath, Module | Promise<Module>>;
   onAddDependencies: Options['onAddDependencies'];
   onAddModule: Options['onAddModule'];
   packages: Packages;
@@ -91,7 +83,7 @@ export type Export =
 export type Graph<SourceData = unknown, DependenciesData = unknown> = {
   circularDependencies: readonly (readonly ModulePath[])[];
   errors: readonly Error[];
-  modules: Modules<SourceData, DependenciesData>;
+  modules: Record<ModulePath, Module<SourceData, DependenciesData>>;
   packages: Packages;
 };
 
@@ -100,13 +92,13 @@ export type Graph<SourceData = unknown, DependenciesData = unknown> = {
  */
 export type Import = Position & {
   default?: Name;
-  isDefaultExportNotFound?: true;
   isSkipped?: true;
   modulePath?: ModulePath;
   moduleResolveError?: Error;
   namespace?: Name;
-  names?: Record<Name, {as?: Name; isExportNotFound?: true}>;
+  names?: Record<Name, {as?: Name; resolved?: ResolvedImport}>;
   packagePath?: PackagePath;
+  resolvedDefault?: ResolvedImport;
 };
 
 export type {ImportsExports};
@@ -254,15 +246,27 @@ export type RawPath = string;
  */
 export type Reexport = Position & {
   default?: Name;
-  isDefaultExportNotFound?: true;
   isSkipped?: true;
   modulePath?: ModulePath;
   moduleResolveError?: Error;
-  names?: Record<Name, {by?: Name; isExportNotFound?: true}>;
+  names?: Record<Name, {by?: Name; resolved?: ResolvedImport}>;
   namespaces?: Record<Name, true>;
   packagePath?: PackagePath;
+  resolvedDefault?: ResolvedImport;
   star?: true;
 };
+
+/**
+ * Resolved import of a module, that is, information about which module or package
+ * this import was from and under what name (or default, or namespace).
+ */
+export type ResolvedImport =
+  | 'error'
+  | {kind: 'default' | 'namespace'; modulePath: ModulePath}
+  | {kind: 'name'; modulePath: ModulePath; name: Name}
+  | {kind: 'default from package' | 'namespace from package'; packagePath: PackagePath}
+  | {kind: 'from packages'; packagePaths: readonly PackagePath[]}
+  | {kind: 'name from package'; name: Name; packagePath: PackagePath};
 
 /**
  * Resolved related path to module from current working directory,

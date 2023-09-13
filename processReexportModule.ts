@@ -81,6 +81,15 @@ export const processReexportModule = async (
 
   const actualExports = reexportedModule.exports || {};
 
+  let hasStarReexport = false;
+
+  for (const rawPath in reexportedModule.reexports) {
+    if (reexportedModule.reexports[rawPath]!.star) {
+      hasStarReexport = true;
+      break;
+    }
+  }
+
   for (const name in reexportObject.names) {
     const by: Name = reexportObject.names[name]!.by ?? name;
     let expectedExport = expectedExports[by];
@@ -106,8 +115,8 @@ export const processReexportModule = async (
       expectedExport[module.path] = 'reexport';
     }
 
-    if (!(by in actualExports)) {
-      reexportObject.names[name]!.isExportNotFound = true;
+    if (hasStarReexport === false && !(by in actualExports)) {
+      reexportObject.names[name]!.resolved = 'error';
     }
   }
 
@@ -136,7 +145,7 @@ export const processReexportModule = async (
     }
 
     if (!('defaultExport' in reexportedModule)) {
-      reexportObject.isDefaultExportNotFound = true;
+      reexportObject.resolvedDefault = 'error';
     }
   }
 };
