@@ -1,6 +1,6 @@
 import {dirname, join, sep} from 'node:path';
 
-import {getModulesGraph} from './index';
+import {getModulesGraph, resolveImports} from './index';
 
 declare const process: {env: {_START: string}};
 
@@ -22,6 +22,7 @@ const startTestsTime = Date.now();
 ok(`Build passed in ${startTestsTime - Number(process.env._START)}ms!`);
 
 assert(typeof getModulesGraph === 'function', 'getModulesGraph is a function');
+assert(typeof resolveImports === 'function', 'resolveImports is a function');
 
 const emptyGraphPromise = getModulesGraph({
   chooseIndexModule: () => '',
@@ -55,7 +56,7 @@ const modulesGraphPromise = getModulesGraph<number>({
     throw new Error(`Cannot choose module for \`${resolvedPath}\``);
   },
   directories: [],
-  modules: ['./index.ts'],
+  modules: ['./index.spec.ts'],
   onAddDependencies: () => {},
   onAddModule: (_module, source) => source.length,
   resolvePath: (modulePath, rawPath) => {
@@ -77,15 +78,20 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
 
   assert(modulesGraph.errors.length === 0, 'gets graph without errors');
 
-  assert('processImportPackage.ts' in modulesGraph.modules, 'gets modules by imports');
+  const {modules} = modulesGraph;
+
+  assert(
+    'processImportPackage.ts' in modules && 'processModule.ts' in modules,
+    'gets modules by imports',
+  );
 
   assert('parse-imports-exports' in modulesGraph.packages, 'gets packages by imports');
 
-  for (const modulePath in modulesGraph.modules) {
-    const module = modulesGraph.modules[modulePath]!;
+  for (const modulePath in modules) {
+    const module = modules[modulePath]!;
 
     if (module instanceof Promise) {
-      throw new Error(`Module is a promise`);
+      assert(false, 'module is resolved (not a promise)');
     }
 
     if ('errors' in module || 'parseErrors' in module || 'warnings' in module) {
@@ -108,6 +114,36 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       }
     }
   }
+
+  const indexSpecModule = modules['index.spec.ts']!;
+  const processModule = modules['processModule.ts']!;
+
+  for (const module of [indexSpecModule, processModule]) {
+    resolveImports(modulesGraph, module);
+
+    for (const rawPath in module.imports) {
+      const importObject = module.imports[rawPath]!;
+
+      for (const name in importObject.names) {
+        const nameObject = importObject.names[name]!;
+
+        if (typeof nameObject.resolved !== 'object') {
+          assert(false, 'resolveImports resolves all imports');
+        }
+      }
+    }
+  }
+
+  const {resolved} = indexSpecModule.imports!['./index']!.names!['resolveImports']!;
+
+  assert(
+    resolved !== undefined &&
+      resolved !== 'error' &&
+      resolved.kind === 'name' &&
+      resolved.modulePath === 'resolveImports.ts' &&
+      resolved.name === 'resolveImports',
+    'resolveImports resolves imports through reexports',
+  );
 
   ok(`All ${testsCount} tests passed in ${Date.now() - startTestsTime}ms!`);
 });

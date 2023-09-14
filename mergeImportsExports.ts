@@ -240,7 +240,7 @@ export const mergeImportsExports = (
         exports[name] = {
           start: namedExport.start,
           end: namedExport.end,
-          kind: 'named',
+          kind: 'name',
           ...namedExport.names[name],
         };
       }
@@ -359,7 +359,10 @@ export const mergeImportsExports = (
         exports[namespace] = {from: rawPath, kind: 'reexport', namespace: true};
 
         if (reexportObject.namespaces === undefined) {
-          reexportObject.namespaces = {};
+          reexportObject.namespaces = {__proto__: null} as Exclude<
+            typeof reexportObject.namespaces,
+            undefined
+          >;
         }
 
         reexportObject.namespaces[namespace] = true;

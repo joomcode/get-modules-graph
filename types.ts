@@ -74,7 +74,7 @@ export type DirectoryPath = string;
  */
 export type Export =
   | (Position & {kind: DeclarationExportKind})
-  | (Position & {by?: Name; kind: 'named'})
+  | (Position & {by?: Name; kind: 'name'})
   | {by?: Name; from: RawPath; kind: 'reexport'; namespace?: true};
 
 /**
@@ -253,6 +253,7 @@ export type Reexport = Position & {
   namespaces?: Record<Name, true>;
   packagePath?: PackagePath;
   resolvedDefault?: ResolvedImport;
+  resolvedThroughStar?: Record<Name, ResolvedImport>;
   star?: true;
 };
 
@@ -265,7 +266,7 @@ export type ResolvedImport =
   | {kind: 'default' | 'namespace'; modulePath: ModulePath}
   | {kind: 'name'; modulePath: ModulePath; name: Name}
   | {kind: 'default from package' | 'namespace from package'; packagePath: PackagePath}
-  | {kind: 'from packages'; packagePaths: readonly PackagePath[]}
+  | {kind: 'from packages'; packagesPaths: readonly PackagePath[]}
   | {kind: 'name from package'; name: Name; packagePath: PackagePath};
 
 /**

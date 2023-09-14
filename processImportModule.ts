@@ -79,7 +79,7 @@ export const processImportModule = async (
     >;
   }
 
-  const actualExports = importedModule.exports || {};
+  const actualExports = importedModule.exports || {__proto__: null};
 
   let hasStarReexport = false;
 
@@ -143,7 +143,7 @@ export const processImportModule = async (
       expectedDefaultExport[module.path] = 'import';
     }
 
-    if (!('defaultExport' in importedModule)) {
+    if (importedModule.defaultExport === undefined) {
       importObject.resolvedDefault = 'error';
     }
   }

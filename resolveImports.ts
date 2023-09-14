@@ -4,6 +4,10 @@ import type {Graph, Module} from './types';
 
 /**
  * Resolves all imports of module in graph of ECMAScript/TypeScript modules.
+ * This function adds an `resolved` field for all imported names (and for the imported default value)
+ * of all modules imported from this module, except for unresolved modules.
+ * An unresolved module is either a skipped (by `resolvePath`) module or
+ * a module with `moduleResolveError`.
  */
 export const resolveImports = <SourceData, DependenciesData>(
   graph: Graph<SourceData, DependenciesData>,
@@ -12,7 +16,7 @@ export const resolveImports = <SourceData, DependenciesData>(
   for (const rawPath in imports) {
     const importObject = imports[rawPath]!;
 
-    if ('moduleResolveError' in importObject || 'isSkipped' in importObject) {
+    if (importObject.isSkipped || importObject.moduleResolveError !== undefined) {
       continue;
     }
 
@@ -22,18 +26,18 @@ export const resolveImports = <SourceData, DependenciesData>(
       for (const name in names) {
         const nameObject = names[name]!;
 
-        if ('resolved' in nameObject) {
+        if (nameObject.resolved !== undefined) {
           continue;
         }
 
         nameObject.resolved = {kind: 'name from package', name, packagePath};
       }
 
-      if ('default' in importObject && !('resolvedDefault' in importObject)) {
+      if (importObject.default !== undefined && importObject.resolvedDefault === undefined) {
         importObject.resolvedDefault = {kind: 'default from package', packagePath};
       }
 
-      return;
+      continue;
     }
 
     if (modulePath === undefined) {
@@ -53,7 +57,7 @@ export const resolveImports = <SourceData, DependenciesData>(
     for (const name in names) {
       const nameObject = names[name]!;
 
-      if ('resolved' in nameObject) {
+      if (nameObject.resolved !== undefined) {
         continue;
       }
 
@@ -64,7 +68,7 @@ export const resolveImports = <SourceData, DependenciesData>(
       );
     }
 
-    if ('default' in importObject && !('resolvedDefault' in importObject)) {
+    if (importObject.default !== undefined && importObject.resolvedDefault === undefined) {
       importObject.resolvedDefault = resolveImport<SourceData, DependenciesData>(
         graph,
         importedModule,

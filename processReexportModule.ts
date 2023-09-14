@@ -79,7 +79,7 @@ export const processReexportModule = async (
     >;
   }
 
-  const actualExports = reexportedModule.exports || {};
+  const actualExports = reexportedModule.exports || {__proto__: null};
 
   let hasStarReexport = false;
 
@@ -144,7 +144,7 @@ export const processReexportModule = async (
       expectedDefaultExport[module.path] = 'reexport';
     }
 
-    if (!('defaultExport' in reexportedModule)) {
+    if (reexportedModule.defaultExport === undefined) {
       reexportObject.resolvedDefault = 'error';
     }
   }
