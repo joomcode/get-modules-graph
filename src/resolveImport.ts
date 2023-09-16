@@ -151,6 +151,44 @@ export const resolveImport = <SourceData, DependenciesData>(
       return 'error';
     }
 
+    const {modulePath, namespaces, packagePath} = reexportObject;
+
+    if (namespaces !== undefined && name in namespaces) {
+      if (namespace !== true) {
+        throw new Error(
+          `Incorrect namespace reexport \`${name}\` from \`${rawPath}\` in module \`${path}\``,
+        );
+      }
+
+      const namespaceObject = namespaces[name]!;
+
+      if (namespaceObject.resolved !== undefined) {
+        return namespaceObject.resolved;
+      }
+
+      if (packagePath !== undefined) {
+        namespaceObject.resolved = {kind: 'namespace from package', packagePath};
+
+        return namespaceObject.resolved;
+      }
+
+      if (modulePath === undefined) {
+        throw new Error(
+          `Cannot find module path or package path in reexport from \`${rawPath}\` in module \`${path}\``,
+        );
+      }
+
+      namespaceObject.resolved = {kind: 'namespace', modulePath};
+
+      return namespaceObject.resolved;
+    }
+
+    if (namespace) {
+      throw new Error(
+        `Incorrect namespace reexport \`${name}\` from \`${rawPath}\` in module \`${path}\``,
+      );
+    }
+
     const nameObject = reexportObject.names![name];
 
     if (nameObject === undefined) {
@@ -163,15 +201,7 @@ export const resolveImport = <SourceData, DependenciesData>(
       return nameObject.resolved;
     }
 
-    const {modulePath, packagePath} = reexportObject;
-
     if (packagePath !== undefined) {
-      if (namespace) {
-        nameObject.resolved = {kind: 'namespace from package', packagePath};
-
-        return nameObject.resolved;
-      }
-
       const by = exportObject.by ?? name;
 
       nameObject.resolved =
@@ -194,12 +224,6 @@ export const resolveImport = <SourceData, DependenciesData>(
       throw new Error(
         `Cannot find module \`${modulePath}\`, reexported from \`${path}\` as \`${rawPath}\``,
       );
-    }
-
-    if (namespace) {
-      nameObject.resolved = {kind: 'namespace', modulePath};
-
-      return nameObject.resolved;
     }
 
     const by = exportObject.by ?? name;

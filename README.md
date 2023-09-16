@@ -47,6 +47,7 @@ const modulesGraph = await getModulesGraph<number>({
   },
   skipDirectory: () => false,
   skipModule: () => false,
+  transformSource: (_path, source) => source,
 });
 
 console.log(modulesGraph.circularDependencies);

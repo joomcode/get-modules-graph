@@ -265,7 +265,7 @@ export type Reexport = Position & {
   modulePath?: ModulePath;
   moduleResolveError?: Error;
   names?: Record<Name, {by?: Name; resolved?: ResolvedImport}>;
-  namespaces?: Record<Name, true>;
+  namespaces?: Record<Name, {resolved?: ResolvedImport}>;
   packagePath?: PackagePath;
   resolvedDefault?: ResolvedImport;
   resolvedThroughStar?: Record<Name, ResolvedImport>;

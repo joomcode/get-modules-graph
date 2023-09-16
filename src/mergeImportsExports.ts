@@ -277,7 +277,7 @@ export const mergeImportsExports = (
           continue;
         }
 
-        const exportObject = {
+        const exportObject: Export = {
           from: rawPath,
           kind: 'reexport',
           ...rawReexport.names[name],
@@ -369,7 +369,7 @@ export const mergeImportsExports = (
           >;
         }
 
-        reexportObject.namespaces[namespace] = true;
+        reexportObject.namespaces[namespace] = {};
       }
     }
 

@@ -3,13 +3,15 @@ import {dirname, join, sep} from 'node:path';
 
 import {getModulesGraph, resolveImports} from '../src';
 
-import {baz, foo as asFoo, read as asRead} from './foo';
+import {Bar, baz, foo as asFoo, fs, read as asRead} from './foo';
 
 declare const process: {env: {_START: string}};
 
 export declare class C {
+  Bar: typeof Bar;
   baz: typeof baz;
   foo: typeof asFoo;
+  fs: typeof fs;
   read: typeof asRead;
 }
 
@@ -118,7 +120,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
     if (module.path === 'spec/foo.ts' || module.path === 'spec/bar.ts') {
       assert(
         !('errors' in module) && !('parseErrors' in module) && 'warnings' in module,
-        'get modules with expected warnings',
+        `get module \`${module.path}\` with expected warnings`,
       );
     } else if ('errors' in module || 'parseErrors' in module || 'warnings' in module) {
       assert(false, 'gets modules without errors and warnings');
@@ -177,11 +179,21 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
     }
   }
 
+  const {resolved: resolvedBar} = indexSpecModule.imports!['./foo']!.names!['Bar']!;
   const {resolved: resolvedFoo} = indexSpecModule.imports!['./foo']!.names!['foo']!;
+  const {resolved: resolvedFs} = indexSpecModule.imports!['./foo']!.names!['fs']!;
   const {resolved: resolvedImports} = indexSpecModule.imports!['../src']!.names!['resolveImports']!;
   const {resolved: resolvedParseImportsExports} =
     processModule.imports!['./utils']!.names!['parseImportsExports']!;
   const {resolved: resolvedRead} = indexSpecModule.imports!['./foo']!.names!['read']!;
+
+  assert(
+    resolvedBar !== undefined &&
+      resolvedBar !== 'error' &&
+      resolvedBar.kind === 'namespace' &&
+      resolvedBar.modulePath === 'spec/bar.ts',
+    'resolveImports resolves modules namespaces through reexports',
+  );
 
   assert(
     resolvedFoo !== undefined &&
@@ -190,6 +202,14 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedFoo.modulePath === 'spec/bar.ts' &&
       resolvedFoo.name === 'foo',
     'resolveImports resolves imports through star',
+  );
+
+  assert(
+    resolvedFs !== undefined &&
+      resolvedFs !== 'error' &&
+      resolvedFs.kind === 'namespace from package' &&
+      resolvedFs.packagePath === 'node:fs',
+    'resolveImports resolves packages namespaces through reexports',
   );
 
   assert(

@@ -1,6 +1,6 @@
-import type {Context, Module, ModulePath} from './types';
-
 import {completeDependency} from './completeDependency';
+
+import type {Context, Module, ModulePath} from './types';
 
 /**
  * Processes circular dependencies in modules.

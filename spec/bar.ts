@@ -1,5 +1,7 @@
 export * from 'node:fs';
 
+export * as fs from 'node:fs';
+
 export * from './foo';
 
 // @ts-expect-error
