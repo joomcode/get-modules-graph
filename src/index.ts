@@ -16,6 +16,7 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
   onAddDependencies,
   onAddModule,
   resolvePath,
+  transformSource,
 }: Options<SourceData, DependenciesData>): Promise<Graph<SourceData, DependenciesData>> => {
   const circularDependencies: ModulePath[][] = [];
   const errors: Error[] = [];
@@ -45,6 +46,7 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
     resolvePath,
     resolvedPaths: {__proto__: null} as unknown as Context['resolvedPaths'],
     tasks: [],
+    transformSource,
   };
 
   const promise = new Promise<Graph<SourceData, DependenciesData>>((resolve) => {

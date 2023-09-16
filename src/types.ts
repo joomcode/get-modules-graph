@@ -55,6 +55,7 @@ export type Context = Readonly<{
   resolvePath: Options['resolvePath'];
   resolvedPaths: Record<ModulePath, Module | Error | Promise<Module | Error>>;
   tasks: (Promise<unknown> | undefined)[];
+  transformSource: Options['transformSource'];
 }> & {completedTasksCount: number; resolve: (graph: Graph) => void};
 
 /**
@@ -73,7 +74,7 @@ export type DirectoryPath = string;
  * One export name.
  */
 export type Export =
-  | (Position & {kind: DeclarationExportKind})
+  | (Position & {kind: Exclude<DeclarationExportKind, `declare ${string}`>})
   | (Position & {by?: Name; kind: 'name'})
   | {by?: Name; from: RawPath; kind: 'reexport'; namespace?: true};
 
@@ -140,6 +141,15 @@ export type Module<SourceData = unknown, DependenciesData = unknown> = {
 export type ModulePath = string;
 
 /**
+ * Chain of modules used to prevent hangs due to circular calls when resolving reexports.
+ */
+export type ModulesChain = Readonly<{
+  modulePath: ModulePath;
+  name: Name;
+  next: ModulesChain | undefined;
+}>;
+
+/**
  * Imported or exported name (identifier).
  */
 export type Name = string;
@@ -199,7 +209,8 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
   onAddModule: (
     this: void,
     module: DeepReadonly<Module>,
-    source: string,
+    transformedSource: Source,
+    originalSource: Source,
   ) => SourceData | Promise<SourceData>;
   /**
    * Resolves raw path to dependency module (after the `from` keyword) to relative path
@@ -218,6 +229,10 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
    * If returns `true`, module is skipped in recursive directories traversal.
    */
   skipModule: (this: void, modulePath: ModulePath, moduleName: string) => boolean;
+  /**
+   * Transforms source of module.
+   */
+  transformSource: (this: void, modulePath: ModulePath, source: Source) => Source;
 }>;
 
 /**
@@ -263,10 +278,11 @@ export type Reexport = Position & {
  */
 export type ResolvedImport =
   | 'error'
+  | {kind: 'circular'; modulePath: ModulePath; name: Name}
   | {kind: 'default' | 'namespace'; modulePath: ModulePath}
   | {kind: 'name'; modulePath: ModulePath; name: Name}
   | {kind: 'default from package' | 'namespace from package'; packagePath: PackagePath}
-  | {kind: 'from packages'; packagesPaths: readonly PackagePath[]}
+  | {kind: 'from packages'; name: Name; packagesPaths: readonly PackagePath[]}
   | {kind: 'name from package'; name: Name; packagePath: PackagePath};
 
 /**
@@ -274,3 +290,8 @@ export type ResolvedImport =
  * maybe without extension.
  */
 export type ResolvedPath = string;
+
+/**
+ * Source of module.
+ */
+export type Source = string;

@@ -5,7 +5,7 @@
     "declaration": true,
     "exactOptionalPropertyTypes": true,
     "forceConsistentCasingInFileNames": true,
-    "outDir": ".",
+    "outDir": "build",
     "module": "NodeNext",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
@@ -20,5 +20,5 @@
     "target": "ES2018",
     "types": ["node"]
   },
-  "files": ["index.spec.ts"]
+  "files": ["./spec/index.spec.ts"]
 }

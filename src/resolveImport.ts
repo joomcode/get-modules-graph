@@ -1,6 +1,14 @@
 import {addError} from './utils';
 
-import type {Graph, Module, ModulePath, Name, PackagePath, ResolvedImport} from './types';
+import type {
+  Graph,
+  Module,
+  ModulePath,
+  ModulesChain,
+  Name,
+  PackagePath,
+  ResolvedImport,
+} from './types';
 
 /**
  * Resolves one import of module in graph of ECMAScript/TypeScript modules.
@@ -9,8 +17,24 @@ export const resolveImport = <SourceData, DependenciesData>(
   graph: Graph<SourceData, DependenciesData>,
   module: Module<SourceData, DependenciesData>,
   name: Name,
+  modulesChain?: ModulesChain,
 ): ResolvedImport => {
   const {path, reexports} = module;
+
+  let currentModulesChain: ModulesChain | undefined = modulesChain;
+
+  while (currentModulesChain !== undefined) {
+    if (currentModulesChain.modulePath === path && currentModulesChain.name === name) {
+      return {kind: 'circular', modulePath: path, name};
+    }
+
+    currentModulesChain = currentModulesChain.next;
+  }
+
+  const newModulesChain: ModulesChain =
+    modulesChain === undefined
+      ? {modulePath: path, name, next: undefined}
+      : {modulePath: path, name, next: modulesChain};
 
   if (name === 'default') {
     if (module.defaultExport === undefined) {
@@ -85,6 +109,7 @@ export const resolveImport = <SourceData, DependenciesData>(
         graph,
         reexportedModule,
         by,
+        newModulesChain,
       );
 
       return reexportObject.resolvedDefault;
@@ -179,7 +204,12 @@ export const resolveImport = <SourceData, DependenciesData>(
 
     const by = exportObject.by ?? name;
 
-    nameObject.resolved = resolveImport<SourceData, DependenciesData>(graph, reexportedModule, by);
+    nameObject.resolved = resolveImport<SourceData, DependenciesData>(
+      graph,
+      reexportedModule,
+      by,
+      newModulesChain,
+    );
 
     return nameObject.resolved;
   }
@@ -233,10 +263,11 @@ export const resolveImport = <SourceData, DependenciesData>(
         graph,
         reexportedModule,
         name,
+        newModulesChain,
       );
     }
 
-    if (resolved === 'error') {
+    if (resolved === 'error' || resolved.kind === 'circular') {
       continue;
     }
 
@@ -257,7 +288,7 @@ export const resolveImport = <SourceData, DependenciesData>(
   }
 
   if (starredPackagesPaths.length > 0) {
-    return {kind: 'from packages', packagesPaths: starredPackagesPaths};
+    return {kind: 'from packages', name, packagesPaths: starredPackagesPaths};
   }
 
   return 'error';

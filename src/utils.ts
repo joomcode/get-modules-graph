@@ -35,6 +35,8 @@ export const addWarning = (module: Module, message: string, index: number): void
   warnings[index] = warnings[index] === undefined ? message : `${warnings[index]}\n${message}`;
 };
 
+export {parseImportsExports} from 'parse-imports-exports';
+
 /**
  * Reads and returns directory content, by directory path (with caching).
  */

@@ -1,16 +1,22 @@
 import {readFile} from 'node:fs/promises';
 import {normalize} from 'node:path';
 
-import {parseImportsExports} from 'parse-imports-exports';
-
 import {mergeImportsExports} from './mergeImportsExports';
 import {processImportModule} from './processImportModule';
 import {processImportPackage} from './processImportPackage';
 import {processReexportModule} from './processReexportModule';
 import {processReexportPackage} from './processReexportPackage';
-import {addError, waitTasks} from './utils';
+import {addError, parseImportsExports, waitTasks} from './utils';
 
-import type {Context, ModulePath, Module, PackagePath, RawPath, ResolvedPath} from './types';
+import type {
+  Context,
+  ModulePath,
+  Module,
+  PackagePath,
+  RawPath,
+  ResolvedPath,
+  Source,
+} from './types';
 
 const READ_FILE_OPTIONS = {encoding: 'utf8'} as const;
 
@@ -18,7 +24,7 @@ const READ_FILE_OPTIONS = {encoding: 'utf8'} as const;
  * Processes module by module path.
  */
 export const processModule = async (context: Context, modulePath: ModulePath): Promise<Module> => {
-  const {onAddDependencies, onAddModule, modules, resolvePath} = context;
+  const {onAddDependencies, onAddModule, modules, resolvePath, transformSource} = context;
 
   if (modulePath in modules) {
     return modules[modulePath]!;
@@ -35,13 +41,15 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
     resolve = res;
   });
 
-  const source = await readFile(modulePath, READ_FILE_OPTIONS).catch((error) => {
+  const originalSource: Source = await readFile(modulePath, READ_FILE_OPTIONS).catch((error) => {
     addError(module, `Cannot read module by path \`${modulePath}\`: ${error}`, 0);
 
     return '';
   });
 
-  const importsExports = parseImportsExports(source);
+  const transformedSource: Source = transformSource(modulePath, originalSource);
+
+  const importsExports = parseImportsExports(transformedSource);
 
   mergeImportsExports(module, importsExports);
 
@@ -101,7 +109,9 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
   waitTasks(context, tasks);
 
-  const sourceData = onAddModule(module, source) as {then?: unknown} | undefined;
+  const sourceData = onAddModule(module, transformedSource, originalSource) as
+    | {then?: unknown}
+    | undefined;
 
   if (typeof sourceData?.then === 'function') {
     return sourceData.then((data: unknown) => {

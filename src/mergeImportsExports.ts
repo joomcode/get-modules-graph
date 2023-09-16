@@ -199,6 +199,10 @@ export const mergeImportsExports = (
   for (const name in declarationExports) {
     const declarationExport = declarationExports[name]!;
 
+    if (declarationExport.kind.startsWith('declare')) {
+      continue;
+    }
+
     if (name in moduleNames) {
       addError(
         module,
@@ -215,7 +219,7 @@ export const mergeImportsExports = (
       moduleNames[name] = true;
     }
 
-    exports[name] = declarationExport;
+    exports[name] = declarationExport as (typeof exports)[string];
   }
 
   for (const namedExport of namedExports || []) {
