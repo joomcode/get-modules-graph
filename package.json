@@ -1,6 +1,6 @@
 {
   "name": "get-modules-graph",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "Get and traverse graph of ECMAScript/TypeScript modules",
   "author": "uid11",
   "bugs": "https://github.com/joomcode/get-modules-graph/issues",

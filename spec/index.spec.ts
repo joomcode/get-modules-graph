@@ -1,9 +1,13 @@
 import 'node:fs';
 import {dirname, join, sep} from 'node:path';
 
-import {getModulesGraph, resolveImports} from '../src';
+import {getModulesGraph, resolveImports, resolveReexports} from '../src';
 
 import {Bar, baz, foo as asFoo, fs, read as asRead} from './foo';
+
+export {join} from 'node:path';
+
+export {resolveReexports} from '../src';
 
 declare const process: {env: {_START: string}};
 
@@ -34,6 +38,7 @@ ok(`Build passed in ${startTestsTime - Number(process.env._START)}ms!`);
 
 assert(typeof getModulesGraph === 'function', 'getModulesGraph is a function');
 assert(typeof resolveImports === 'function', 'resolveImports is a function');
+assert(typeof resolveReexports === 'function', 'resolveReexports is a function');
 
 const emptyGraphPromise = getModulesGraph({
   chooseIndexModule: () => '',
@@ -157,7 +162,8 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
   const indexSpecModule = modules['spec/index.spec.ts']!;
   const processModule = modules['src/processModule.ts']!;
 
-  assert(indexSpecModule.hasOwnProperty('exports') === false, 'do not includes type exports');
+  assert('exports' in indexSpecModule, 'includes reexports');
+  assert(!('C' in indexSpecModule.exports!), 'do not includes type exports');
 
   assert('node:fs' in indexSpecModule.imports!, 'includes imports without names and default value');
 
@@ -165,6 +171,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
 
   for (const module of [indexSpecModule, processModule]) {
     resolveImports(modulesGraph, module);
+    resolveReexports(modulesGraph, module);
 
     for (const rawPath in module.imports) {
       const importObject = module.imports[rawPath]!;
@@ -183,9 +190,12 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
   const {resolved: resolvedFoo} = indexSpecModule.imports!['./foo']!.names!['foo']!;
   const {resolved: resolvedFs} = indexSpecModule.imports!['./foo']!.names!['fs']!;
   const {resolved: resolvedImports} = indexSpecModule.imports!['../src']!.names!['resolveImports']!;
+  const {resolved: resolvedJoin} = indexSpecModule.reexports!['node:path']!.names!['join']!;
   const {resolved: resolvedParseImportsExports} =
     processModule.imports!['./utils']!.names!['parseImportsExports']!;
   const {resolved: resolvedRead} = indexSpecModule.imports!['./foo']!.names!['read']!;
+  const {resolved: resolvedReexports} =
+    indexSpecModule.reexports!['../src']!.names!['resolveReexports']!;
 
   assert(
     resolvedBar !== undefined &&
@@ -222,6 +232,15 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
   );
 
   assert(
+    resolvedJoin !== undefined &&
+      resolvedJoin !== 'error' &&
+      resolvedJoin.kind === 'name from package' &&
+      resolvedJoin.packagePath === 'node:path' &&
+      resolvedJoin.name === 'join',
+    'resolveReexports resolves reexports from packages',
+  );
+
+  assert(
     resolvedParseImportsExports !== undefined &&
       resolvedParseImportsExports !== 'error' &&
       resolvedParseImportsExports.kind === 'name from package' &&
@@ -237,6 +256,15 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedRead.name === 'read' &&
       resolvedRead.packagesPaths[0] === 'node:fs',
     'resolveImports resolves imports from packages through star',
+  );
+
+  assert(
+    resolvedReexports !== undefined &&
+      resolvedReexports !== 'error' &&
+      resolvedReexports.kind === 'name' &&
+      resolvedReexports.modulePath === 'src/resolveReexports.ts' &&
+      resolvedReexports.name === 'resolveReexports',
+    'resolveReexports resolves reexports from modules',
   );
 
   ok(`All ${testsCount} tests passed in ${Date.now() - startTestsTime}ms!`);
