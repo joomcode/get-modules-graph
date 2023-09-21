@@ -1,6 +1,6 @@
 {
   "name": "get-modules-graph",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Get and traverse graph of ECMAScript/TypeScript modules",
   "author": "uid11",
   "bugs": "https://github.com/joomcode/get-modules-graph/issues",
@@ -18,6 +18,8 @@
   "files": [
     "*.js",
     "index.d.ts",
+    "resolveImports.d.ts",
+    "resolveReexports.d.ts",
     "types.d.ts"
   ],
   "homepage": "https://github.com/joomcode/get-modules-graph#readme",
