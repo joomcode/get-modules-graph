@@ -1,7 +1,11 @@
 import type {Dirent} from 'node:fs';
 import type {ParsedPath} from 'node:path';
 
-import type {ImportsExports, Kind as DeclarationExportKind} from 'parse-imports-exports';
+import type {
+  ImportsExports,
+  Kind as DeclarationExportKind,
+  Options as ParseOptions,
+} from 'parse-imports-exports';
 
 /**
  * Readonly type with recursive applying.
@@ -52,6 +56,7 @@ export type Context = Readonly<{
   onAddDependencies: Options['onAddDependencies'];
   onAddModule: Options['onAddModule'];
   packages: Packages;
+  parseOptions: ParseOptions | undefined;
   resolvePath: Options['resolvePath'];
   resolvedPaths: Record<ModulePath, Module | Error | Promise<Module | Error>>;
   tasks: (Promise<unknown> | undefined)[];
@@ -96,13 +101,13 @@ export type Import = Position & {
   isSkipped?: true;
   modulePath?: ModulePath;
   moduleResolveError?: Error;
-  namespace?: Name;
+  namespace?: {as: Name; kind: 'import'} | {kind: 'dynamic import' | 'require'};
   names?: Record<Name, {as?: Name; resolved?: ResolvedImport}>;
   packagePath?: PackagePath;
   resolvedDefault?: ResolvedImport;
 };
 
-export type {ImportsExports};
+export type {ImportsExports, ParseOptions};
 
 /**
  * Merged imports, exports and reexports of module.
@@ -150,6 +155,14 @@ export type ModulesChain = Readonly<{
 }>;
 
 /**
+ * Returns a copy of the object type with mutable properties.
+ * `Mutable<{readonly foo: string}>` = `{foo: string}`.
+ */
+export type Mutable<Type> = {
+  -readonly [Key in keyof Type]: Type[Key];
+};
+
+/**
  * Imported or exported name (identifier).
  */
 export type Name = string;
@@ -186,6 +199,16 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
    */
   directories: readonly string[];
   /**
+   * If `true`, then `import(...)` expression with static strings will be taken into account
+   * (as importing the namespace of the entire module).
+   */
+  includeDynamicImports: boolean;
+  /**
+   * If `true`, then `require(...)` expression with static strings will be taken into account
+   * (as importing the namespace of the entire module).
+   */
+  includeRequires: boolean;
+  /**
    * List of relative paths to modules for recursive traversal by their dependencies.
    */
   modules: readonly string[];
@@ -221,6 +244,11 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
    * If returns `undefined`, dependency module is skipped.
    */
   resolvePath: (this: void, modulePath: ModulePath, rawPath: RawPath) => ResolvedPath | undefined;
+  /**
+   * If `true`, then we respect string literals when parsing, that is,
+   * we ignore the expressions inside them (but parsing will be a little slower).
+   */
+  respectStringLiterals: boolean;
   /**
    * If returns `true`, directory is skipped in recursive directories traversal.
    */

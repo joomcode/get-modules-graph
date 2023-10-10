@@ -202,7 +202,7 @@ export const resolveImport = <SourceData, DependenciesData>(
     }
 
     if (packagePath !== undefined) {
-      const by = exportObject.by ?? name;
+      const {by = name} = exportObject;
 
       nameObject.resolved =
         by === 'default'
@@ -226,7 +226,7 @@ export const resolveImport = <SourceData, DependenciesData>(
       );
     }
 
-    const by = exportObject.by ?? name;
+    const {by = name} = exportObject;
 
     nameObject.resolved = resolveImport<SourceData, DependenciesData>(
       graph,

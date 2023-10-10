@@ -24,7 +24,8 @@ const READ_FILE_OPTIONS = {encoding: 'utf8'} as const;
  * Processes module by module path.
  */
 export const processModule = async (context: Context, modulePath: ModulePath): Promise<Module> => {
-  const {onAddDependencies, onAddModule, modules, resolvePath, transformSource} = context;
+  const {onAddDependencies, onAddModule, modules, parseOptions, resolvePath, transformSource} =
+    context;
 
   if (modulePath in modules) {
     return modules[modulePath]!;
@@ -49,9 +50,9 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
   const transformedSource: Source = transformSource(modulePath, originalSource);
 
-  const importsExports = parseImportsExports(transformedSource);
+  const importsExports = parseImportsExports(transformedSource, parseOptions);
 
-  mergeImportsExports(module, importsExports);
+  mergeImportsExports(module, importsExports, transformedSource);
 
   // cannot use `uncompletedDependenciesCount > 0` instead, because `processImportModule`/`processReexportModule`
   // calls can synchronously return `uncompletedDependenciesCount` to 0

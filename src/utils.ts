@@ -12,27 +12,54 @@ const READ_DIRECTORY_OPTIONS = {withFileTypes: true} as const;
 /**
  * Adds some error to module object.
  */
-export const addError = (module: Module, message: string, index: number): void => {
+export const addError = (
+  module: Module,
+  message: string,
+  startIndex: number,
+  endIndex?: number,
+  source?: string,
+): void => {
   let {errors} = module;
 
   if (errors === undefined) {
-    module.errors = errors = {};
+    module.errors = errors = {__proto__: null} as unknown as Exclude<typeof errors, undefined>;
   }
 
-  errors[index] = errors[index] === undefined ? message : `${errors[index]}\n${message}`;
+  const fullMessage =
+    endIndex === undefined || source === undefined
+      ? message
+      : `${message}:\n${source.slice(startIndex, Math.min(endIndex, startIndex + 200))}`;
+
+  errors[startIndex] =
+    errors[startIndex] === undefined ? fullMessage : `${errors[startIndex]}\n${fullMessage}`;
 };
 
 /**
  * Adds some warning to module object.
  */
-export const addWarning = (module: Module, message: string, index: number): void => {
+export const addWarning = (
+  module: Module,
+  message: string,
+  startIndex: number,
+  endIndex?: number,
+  source?: string,
+): void => {
   let {warnings} = module;
 
   if (warnings === undefined) {
-    module.warnings = warnings = {};
+    module.warnings = warnings = {__proto__: null} as unknown as Exclude<
+      typeof warnings,
+      undefined
+    >;
   }
 
-  warnings[index] = warnings[index] === undefined ? message : `${warnings[index]}\n${message}`;
+  const fullMessage =
+    endIndex === undefined || source === undefined
+      ? message
+      : `${message}:\n${source.slice(startIndex, Math.min(endIndex, startIndex + 200))}`;
+
+  warnings[startIndex] =
+    warnings[startIndex] === undefined ? fullMessage : `${warnings[startIndex]}\n${fullMessage}`;
 };
 
 export {parseImportsExports} from 'parse-imports-exports';

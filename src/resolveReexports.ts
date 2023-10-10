@@ -20,7 +20,7 @@ export const resolveReexports = <SourceData, DependenciesData>(
       continue;
     }
 
-    const {modulePath, names, packagePath} = reexportObject;
+    const {modulePath, names, namespaces, packagePath} = reexportObject;
 
     if (packagePath !== undefined) {
       for (const name in names) {
@@ -30,11 +30,36 @@ export const resolveReexports = <SourceData, DependenciesData>(
           continue;
         }
 
-        nameObject.resolved = {kind: 'name from package', name, packagePath};
+        const {by = name} = nameObject;
+
+        nameObject.resolved =
+          by === 'default'
+            ? {kind: 'default from package', packagePath}
+            : {kind: 'name from package', name: by, packagePath};
+      }
+
+      for (const name in namespaces) {
+        const namespaceObject = namespaces[name]!;
+
+        if (namespaceObject.resolved !== undefined) {
+          continue;
+        }
+
+        namespaceObject.resolved = {kind: 'namespace from package', packagePath};
       }
 
       if (reexportObject.default !== undefined && reexportObject.resolvedDefault === undefined) {
-        reexportObject.resolvedDefault = {kind: 'default from package', packagePath};
+        if (reexportObject.default === 'default') {
+          reexportObject.resolvedDefault = {kind: 'default from package', packagePath};
+        } else if (reexportObject.default === '*') {
+          reexportObject.resolvedDefault = {kind: 'namespace from package', packagePath};
+        } else {
+          reexportObject.resolvedDefault = {
+            kind: 'name from package',
+            name: reexportObject.default,
+            packagePath,
+          };
+        }
       }
 
       continue;
@@ -61,19 +86,35 @@ export const resolveReexports = <SourceData, DependenciesData>(
         continue;
       }
 
+      const {by = name} = nameObject;
+
       nameObject.resolved = resolveImport<SourceData, DependenciesData>(
         graph,
         reexportedModule,
-        name,
+        by,
       );
     }
 
+    for (const name in namespaces) {
+      const namespaceObject = namespaces[name]!;
+
+      if (namespaceObject.resolved !== undefined) {
+        continue;
+      }
+
+      namespaceObject.resolved = {kind: 'namespace', modulePath};
+    }
+
     if (reexportObject.default !== undefined && reexportObject.resolvedDefault === undefined) {
-      reexportObject.resolvedDefault = resolveImport<SourceData, DependenciesData>(
-        graph,
-        reexportedModule,
-        'default',
-      );
+      if (reexportObject.default === '*') {
+        reexportObject.resolvedDefault = {kind: 'namespace', modulePath};
+      } else {
+        reexportObject.resolvedDefault = resolveImport<SourceData, DependenciesData>(
+          graph,
+          reexportedModule,
+          reexportObject.default,
+        );
+      }
     }
   }
 };

@@ -91,7 +91,38 @@ export const processReexportModule = async (
   }
 
   for (const name in reexportObject.names) {
-    const by: Name = reexportObject.names[name]!.by ?? name;
+    const {by = name} = reexportObject.names[name]!;
+
+    if (by === 'default') {
+      let {expectedDefaultExport} = reexportedModule;
+
+      if (expectedDefaultExport === undefined) {
+        reexportedModule.expectedDefaultExport = expectedDefaultExport = {
+          __proto__: null,
+        } as Exclude<typeof expectedDefaultExport, undefined>;
+      }
+
+      if (module.path in expectedDefaultExport) {
+        if (expectedDefaultExport[module.path] === 'import') {
+          expectedDefaultExport[module.path] = 'both';
+        } else {
+          addWarning(
+            module,
+            `Duplicate default reexport (as \`${name}\`) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
+            reexportObject.start,
+          );
+        }
+      } else {
+        expectedDefaultExport[module.path] = 'reexport';
+      }
+
+      if (reexportedModule.defaultExport === undefined) {
+        reexportObject.names[name]!.resolved = 'error';
+      }
+
+      continue;
+    }
+
     let expectedExport = expectedExports[by];
 
     if (expectedExport === undefined) {
@@ -107,7 +138,7 @@ export const processReexportModule = async (
       } else {
         addWarning(
           module,
-          `Duplicate reexport of \`${by}\` from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
+          `Duplicate reexport of \`${by}\` (as \`${name}\`) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
           reexportObject.start,
         );
       }
@@ -120,14 +151,13 @@ export const processReexportModule = async (
     }
   }
 
-  if ('default' in reexportObject) {
+  if (reexportObject.default === 'default') {
     let {expectedDefaultExport} = reexportedModule;
 
     if (expectedDefaultExport === undefined) {
-      reexportedModule.expectedDefaultExport = expectedDefaultExport = {__proto__: null} as Exclude<
-        typeof expectedDefaultExport,
-        undefined
-      >;
+      reexportedModule.expectedDefaultExport = expectedDefaultExport = {
+        __proto__: null,
+      } as Exclude<typeof expectedDefaultExport, undefined>;
     }
 
     if (module.path in expectedDefaultExport) {
@@ -136,7 +166,7 @@ export const processReexportModule = async (
       } else {
         addWarning(
           module,
-          `Duplicate default reexport \`${reexportObject.default}\` from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
+          `Duplicate default reexport (as default) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
           reexportObject.start,
         );
       }
@@ -145,6 +175,35 @@ export const processReexportModule = async (
     }
 
     if (reexportedModule.defaultExport === undefined) {
+      reexportObject.resolvedDefault = 'error';
+    }
+  } else if ('default' in reexportObject) {
+    const by: Name = reexportObject.default;
+
+    let expectedExport = expectedExports[by];
+
+    if (expectedExport === undefined) {
+      expectedExports[by] = expectedExport = {__proto__: null} as Exclude<
+        typeof expectedExport,
+        undefined
+      >;
+    }
+
+    if (module.path in expectedExport) {
+      if (expectedExport[module.path] === 'import') {
+        expectedExport[module.path] = 'both';
+      } else {
+        addWarning(
+          module,
+          `Duplicate reexport of \`${by}\` (as default) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
+          reexportObject.start,
+        );
+      }
+    } else {
+      expectedExport[module.path] = 'reexport';
+    }
+
+    if (hasStarReexport === false && !(by in actualExports)) {
       reexportObject.resolvedDefault = 'error';
     }
   }

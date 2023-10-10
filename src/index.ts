@@ -4,7 +4,7 @@ import {processCircularDependencies} from './processCircularDependencies';
 import {processModule} from './processModule';
 import {waitTasks} from './utils';
 
-import type {Context, Graph, ModulePath, Options} from './types';
+import type {Context, Graph, ModulePath, Mutable, Options, ParseOptions} from './types';
 
 /**
  * Get and traverse graph of ECMAScript/TypeScript modules.
@@ -12,10 +12,13 @@ import type {Context, Graph, ModulePath, Options} from './types';
 export const getModulesGraph = <SourceData = void, DependenciesData = void>({
   chooseIndexModule,
   chooseModule,
+  includeDynamicImports,
+  includeRequires,
   modules: initialModules,
   onAddDependencies,
   onAddModule,
   resolvePath,
+  respectStringLiterals,
   transformSource,
 }: Options<SourceData, DependenciesData>): Promise<Graph<SourceData, DependenciesData>> => {
   const circularDependencies: ModulePath[][] = [];
@@ -30,6 +33,20 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
     packages,
   };
 
+  const parseOptions: Mutable<ParseOptions> = {};
+
+  if (includeDynamicImports === false) {
+    parseOptions.ignoreDynamicImports = true;
+  }
+
+  if (includeRequires === false) {
+    parseOptions.ignoreRequires = true;
+  }
+
+  if (respectStringLiterals === false) {
+    parseOptions.ignoreStringLiterals = true;
+  }
+
   const context: Context = {
     chooseIndexModule,
     chooseModule,
@@ -42,6 +59,7 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
     onAddDependencies: onAddDependencies as Context['onAddDependencies'],
     onAddModule,
     packages,
+    parseOptions: Object.keys(parseOptions).length > 0 ? parseOptions : undefined,
     resolve: Object,
     resolvePath,
     resolvedPaths: {__proto__: null} as unknown as Context['resolvedPaths'],
@@ -71,4 +89,4 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
 export {resolveImports} from './resolveImports';
 export {resolveReexports} from './resolveReexports';
 
-export type {Graph, Module, Package} from './types';
+export type {Graph, Module, Options, Package} from './types';

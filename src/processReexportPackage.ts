@@ -1,6 +1,6 @@
 import {addWarning} from './utils';
 
-import type {Context, Module, Name, PackagePath, RawPath} from './types';
+import type {Context, Module, PackagePath, RawPath} from './types';
 
 /**
  * Processes reexport of package by raw import `from` path and package path.
@@ -71,7 +71,7 @@ export const processReexportPackage = (
   }
 
   for (const name in reexportObject.names) {
-    const by: Name = reexportObject.names[name]!.by ?? name;
+    const {by = name} = reexportObject.names[name]!;
     let expectedExport = expectedExports[by];
 
     if (expectedExport === undefined) {

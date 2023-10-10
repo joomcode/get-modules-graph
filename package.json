@@ -1,15 +1,16 @@
 {
   "name": "get-modules-graph",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Get and traverse graph of ECMAScript/TypeScript modules",
   "author": "uid11",
   "bugs": "https://github.com/joomcode/get-modules-graph/issues",
   "dependencies": {
-    "parse-imports-exports": "0.0.7"
+    "parse-imports-exports": "0.0.9"
   },
   "devDependencies": {
     "@types/node": ">=20",
     "prettier": ">=3",
+    "sort-json-keys": ">=1",
     "typescript": ">=5.2"
   },
   "exports": {

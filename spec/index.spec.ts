@@ -3,51 +3,60 @@ import {dirname, join, sep} from 'node:path';
 
 import {getModulesGraph, resolveImports, resolveReexports} from '../src';
 
-import {Bar, baz, foo as asFoo, fs, read as asRead} from './foo';
+import {expectedBarModule, expectedBazModule, expectedFooModule} from './expected';
+import foo, {Bar, baz, foo as asFoo, fs, read as asRead} from './foo';
+import {assert, assertEqualExceptNumbers, ok, testsCount} from './utils';
+
+const quxNamespace = require('./qux');
+
+// @ts-expect-error
+declare const bazNamespace: import('./baz');
+
+declare const bazNamespaceType: typeof import('./baz');
+
+`
+import "./baz";
+`;
+
+export * as foo from 'node:buffer';
+export * as default from 'node:buffer';
 
 export {join} from 'node:path';
 
-export {resolveReexports} from '../src';
+export {resolveReexports as asResolveReexports} from '../src';
+
+export declare class C {
+  asFoo: typeof asFoo;
+  asRead: typeof asRead;
+  Bar: typeof Bar;
+  baz: typeof baz;
+  bazNamespace: typeof bazNamespace;
+  foo: typeof foo;
+  fs: typeof fs;
+  quxNamespace: typeof quxNamespace;
+}
 
 declare const process: {env: {_START: string}};
 
-export declare class C {
-  Bar: typeof Bar;
-  baz: typeof baz;
-  foo: typeof asFoo;
-  fs: typeof fs;
-  read: typeof asRead;
-}
-
-let testsCount = 0;
-
-function assert(value: boolean, message: string): asserts value is true {
-  if (value !== true) {
-    throw new TypeError(`❌ Assert "${message}" fails`);
-  }
-
-  testsCount += 1;
-
-  console.log(' ✅', message);
-}
-
-const ok = (message: string) => console.log(`\x1B[32m[OK]\x1B[39m ${message}`);
 const startTestsTime = Date.now();
 
 ok(`Build passed in ${startTestsTime - Number(process.env._START)}ms!`);
 
-assert(typeof getModulesGraph === 'function', 'getModulesGraph is a function');
-assert(typeof resolveImports === 'function', 'resolveImports is a function');
-assert(typeof resolveReexports === 'function', 'resolveReexports is a function');
+assert(typeof getModulesGraph === 'function', '`getModulesGraph` is a function');
+assert(typeof resolveImports === 'function', '`resolveImports` is a function');
+assert(typeof resolveReexports === 'function', '`resolveReexports` is a function');
 
 const emptyGraphPromise = getModulesGraph({
   chooseIndexModule: () => '',
   chooseModule: () => '',
   directories: [],
+  includeDynamicImports: true,
+  includeRequires: false,
   modules: [],
   onAddDependencies: () => {},
   onAddModule: () => {},
   resolvePath: () => '',
+  respectStringLiterals: true,
   skipDirectory: () => false,
   skipModule: () => false,
   transformSource: (_path, source) => source,
@@ -77,6 +86,8 @@ const modulesGraphPromise = getModulesGraph<number>({
     throw new Error(`Cannot choose module for \`${resolvedPath}\``);
   },
   directories: [],
+  includeDynamicImports: true,
+  includeRequires: true,
   modules: ['./spec/index.spec.ts'],
   onAddDependencies: () => {},
   onAddModule: (_module, source) => source.length,
@@ -87,6 +98,7 @@ const modulesGraphPromise = getModulesGraph<number>({
 
     return rawPath;
   },
+  respectStringLiterals: true,
   skipDirectory: () => false,
   skipModule: () => false,
   transformSource: (path, source) => {
@@ -102,7 +114,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
   assert(emptyGraph.errors.length === 0, 'gets empty graph without errors');
   assert(Object.keys(emptyGraph.modules).length === 0, 'empty graph has no modules');
 
-  assert(modulesGraph.circularDependencies.length === 3, 'finds all circular dependencies');
+  assert(modulesGraph.circularDependencies.length === 4, 'finds all circular dependencies');
 
   assert(modulesGraph.errors.length === 0, 'gets graph without errors');
 
@@ -159,6 +171,9 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
     }
   }
 
+  const barModule = modules['spec/bar.ts']!;
+  const bazModule = modules['spec/baz.ts']!;
+  const fooModule = modules['spec/foo.ts']!;
   const indexSpecModule = modules['spec/index.spec.ts']!;
   const processModule = modules['src/processModule.ts']!;
 
@@ -169,7 +184,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
 
   assert('qux' in processModule.exports!, 'correctly transforms source');
 
-  for (const module of [indexSpecModule, processModule]) {
+  for (const module of [indexSpecModule, fooModule, barModule, bazModule, processModule]) {
     resolveImports(modulesGraph, module);
     resolveReexports(modulesGraph, module);
 
@@ -180,12 +195,27 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
         const nameObject = importObject.names[name]!;
 
         if (typeof nameObject.resolved !== 'object') {
-          assert(false, 'resolveImports resolves all imports');
+          assert(false, '`resolveImports` resolves all imports');
+        }
+      }
+    }
+
+    for (const rawPath in module.reexports) {
+      const reexportObject = module.reexports[rawPath]!;
+
+      for (const name in reexportObject.names) {
+        const nameObject = reexportObject.names[name]!;
+
+        if (typeof nameObject.resolved !== 'object') {
+          assert(false, '`resolveReexports` resolves all reexports');
         }
       }
     }
   }
 
+  const {defaultExport} = indexSpecModule;
+  const {namespace: dynamicImportNamespace} = indexSpecModule.imports!['./baz']!;
+  const {namespace: requireNamespace} = indexSpecModule.imports!['./qux']!;
   const {resolved: resolvedBar} = indexSpecModule.imports!['./foo']!.names!['Bar']!;
   const {resolved: resolvedFoo} = indexSpecModule.imports!['./foo']!.names!['foo']!;
   const {resolved: resolvedFs} = indexSpecModule.imports!['./foo']!.names!['fs']!;
@@ -195,14 +225,38 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
     processModule.imports!['./utils']!.names!['parseImportsExports']!;
   const {resolved: resolvedRead} = indexSpecModule.imports!['./foo']!.names!['read']!;
   const {resolved: resolvedReexports} =
-    indexSpecModule.reexports!['../src']!.names!['resolveReexports']!;
+    indexSpecModule.reexports!['../src']!.names!['asResolveReexports']!;
+  const {resolved: resolvedPackageNamespace} =
+    indexSpecModule.reexports!['node:buffer']!.namespaces!['foo']!;
+  const {resolvedDefault: resolvedPackageDefault} = indexSpecModule.reexports!['node:buffer']!;
+
+  assert(
+    defaultExport !== undefined &&
+      defaultExport.from === 'node:buffer' &&
+      defaultExport.namespace === true,
+    '`defaultExport` from namespace is correct',
+  );
+
+  assert(
+    dynamicImportNamespace !== undefined &&
+      Object.keys(dynamicImportNamespace).length === 1 &&
+      dynamicImportNamespace.kind === 'dynamic import',
+    '`import(...)` expression is correctly parsed',
+  );
+
+  assert(
+    requireNamespace !== undefined &&
+      Object.keys(requireNamespace).length === 1 &&
+      requireNamespace.kind === 'require',
+    '`require(...)` expression is correctly parsed',
+  );
 
   assert(
     resolvedBar !== undefined &&
       resolvedBar !== 'error' &&
       resolvedBar.kind === 'namespace' &&
       resolvedBar.modulePath === 'spec/bar.ts',
-    'resolveImports resolves modules namespaces through reexports',
+    '`resolveImports` resolves modules namespaces through reexports',
   );
 
   assert(
@@ -211,7 +265,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedFoo.kind === 'name' &&
       resolvedFoo.modulePath === 'spec/bar.ts' &&
       resolvedFoo.name === 'foo',
-    'resolveImports resolves imports through star',
+    '`resolveImports` resolves imports through star',
   );
 
   assert(
@@ -219,7 +273,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedFs !== 'error' &&
       resolvedFs.kind === 'namespace from package' &&
       resolvedFs.packagePath === 'node:fs',
-    'resolveImports resolves packages namespaces through reexports',
+    '`resolveImports` resolves packages namespaces through reexports',
   );
 
   assert(
@@ -228,7 +282,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedImports.kind === 'name' &&
       resolvedImports.modulePath === 'src/resolveImports.ts' &&
       resolvedImports.name === 'resolveImports',
-    'resolveImports resolves imports through reexports',
+    '`resolveImports` resolves imports through reexports',
   );
 
   assert(
@@ -237,7 +291,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedJoin.kind === 'name from package' &&
       resolvedJoin.packagePath === 'node:path' &&
       resolvedJoin.name === 'join',
-    'resolveReexports resolves reexports from packages',
+    '`resolveReexports` resolves reexports from packages',
   );
 
   assert(
@@ -246,7 +300,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedParseImportsExports.kind === 'name from package' &&
       resolvedParseImportsExports.packagePath === 'parse-imports-exports' &&
       resolvedParseImportsExports.name === 'parseImportsExports',
-    'resolveImports resolves imports from packages through reexports',
+    '`resolveImports` resolves imports from packages through reexports',
   );
 
   assert(
@@ -255,7 +309,7 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedRead.kind === 'from packages' &&
       resolvedRead.name === 'read' &&
       resolvedRead.packagesPaths[0] === 'node:fs',
-    'resolveImports resolves imports from packages through star',
+    '`resolveImports` resolves imports from packages through star',
   );
 
   assert(
@@ -264,7 +318,33 @@ Promise.all([emptyGraphPromise, modulesGraphPromise]).then(([emptyGraph, modules
       resolvedReexports.kind === 'name' &&
       resolvedReexports.modulePath === 'src/resolveReexports.ts' &&
       resolvedReexports.name === 'resolveReexports',
-    'resolveReexports resolves reexports from modules',
+    '`resolveReexports` resolves reexports from modules',
+  );
+
+  assert(
+    resolvedPackageNamespace !== undefined &&
+      resolvedPackageNamespace !== 'error' &&
+      resolvedPackageNamespace.kind === 'namespace from package' &&
+      resolvedPackageNamespace.packagePath === 'node:buffer',
+    '`resolveReexports` resolves namespaces reexports from packages',
+  );
+
+  assert(
+    resolvedPackageDefault !== undefined &&
+      resolvedPackageDefault !== 'error' &&
+      resolvedPackageDefault.kind === 'namespace from package' &&
+      resolvedPackageDefault.packagePath === 'node:buffer',
+    '`resolveReexports` resolves default reexports from packages',
+  );
+
+  assertEqualExceptNumbers(barModule, expectedBarModule, 'star exports from packages are correct');
+
+  assertEqualExceptNumbers(bazModule, expectedBazModule, 'default named reexports is correct');
+
+  assertEqualExceptNumbers(
+    fooModule,
+    expectedFooModule,
+    'all kinds of imports and reexports are correct',
   );
 
   ok(`All ${testsCount} tests passed in ${Date.now() - startTestsTime}ms!`);

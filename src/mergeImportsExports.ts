@@ -10,14 +10,17 @@ export const mergeImportsExports = (
   {
     declarationExports,
     defaultExport,
+    dynamicImports,
     errors,
     namedExports,
     namedImports,
     namedReexports,
     namespaceImports,
     namespaceReexports,
+    requires,
     starReexports,
   }: ImportsExports,
+  source: string,
 ): void => {
   if (defaultExport) {
     module.defaultExport = defaultExport;
@@ -35,7 +38,13 @@ export const mergeImportsExports = (
 
     for (const rawImport of rawImports) {
       if (rawImport !== rawImports[0]) {
-        addWarning(module, `Duplicate named import from \`${rawPath}\``, rawImport.start);
+        addWarning(
+          module,
+          `Duplicate named import from \`${rawPath}\``,
+          rawImport.start,
+          rawImport.end,
+          source,
+        );
       }
 
       const {default: defaultImport, names} = rawImport;
@@ -46,6 +55,8 @@ export const mergeImportsExports = (
             module,
             `Duplicate default import \`${defaultImport}\` from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
           importObject.default = defaultImport;
@@ -56,12 +67,16 @@ export const mergeImportsExports = (
             module,
             `Duplicate name \`${defaultImport}\` as default import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else if (defaultImport in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${defaultImport}\` cannot be an identifier as default import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
           moduleNames[defaultImport] = true;
@@ -69,19 +84,23 @@ export const mergeImportsExports = (
       }
 
       for (const name in names) {
-        const by: Name = names[name]!.by ?? name;
+        const {by = name} = names[name]!;
 
         if (name in moduleNames) {
           addError(
             module,
             `Duplicate name \`${name}\` as named import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else if (name in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${name}\` cannot be an identifier as named import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
           moduleNames[name] = true;
@@ -91,17 +110,21 @@ export const mergeImportsExports = (
           if (importObject.default !== undefined) {
             addWarning(
               module,
-              `Duplicate default import \`${by}\` from \`${rawPath}\``,
+              `Duplicate default import (as \`${name}\`) from \`${rawPath}\``,
               rawImport.start,
+              rawImport.end,
+              source,
             );
           } else {
-            importObject.default = by;
+            importObject.default = name;
           }
         } else if (by in importedNames) {
           addWarning(
             module,
             `Duplicate imported name \`${by}\` from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
           importedNames[by] = {};
@@ -127,7 +150,13 @@ export const mergeImportsExports = (
 
     for (const rawImport of rawImports) {
       if (rawPath in imports) {
-        addWarning(module, `Duplicate (namespace) import from \`${rawPath}\``, rawImport.start);
+        addWarning(
+          module,
+          `Duplicate (namespace) import from \`${rawPath}\``,
+          rawImport.start,
+          rawImport.end,
+          source,
+        );
       }
 
       const {default: defaultImport, namespace} = rawImport;
@@ -138,6 +167,8 @@ export const mergeImportsExports = (
             module,
             `Duplicate default import \`${defaultImport}\` from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
           importObject.default = defaultImport;
@@ -148,12 +179,16 @@ export const mergeImportsExports = (
             module,
             `Duplicate name \`${defaultImport}\` as default import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else if (defaultImport in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${defaultImport}\` cannot be an identifier as default import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
           moduleNames[defaultImport] = true;
@@ -166,9 +201,11 @@ export const mergeImportsExports = (
             module,
             `Duplicate namespace import \`${namespace}\` from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
-          importObject.namespace = namespace;
+          importObject.namespace = {as: namespace, kind: 'import'};
         }
 
         if (namespace in moduleNames) {
@@ -176,16 +213,92 @@ export const mergeImportsExports = (
             module,
             `Duplicate name \`${namespace}\` as namespace import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else if (namespace in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${namespace}\` cannot be an identifier as namespace import from \`${rawPath}\``,
             rawImport.start,
+            rawImport.end,
+            source,
           );
         } else {
           moduleNames[namespace] = true;
         }
+      }
+    }
+
+    if (!(rawPath in imports)) {
+      imports[rawPath] = importObject;
+    }
+  }
+
+  for (const rawPath in dynamicImports) {
+    const rawImports = dynamicImports[rawPath]!;
+    const importObject: Import =
+      rawPath in imports
+        ? imports[rawPath]!
+        : {start: rawImports[0]!.start, end: rawImports[0]!.end};
+
+    for (const rawImport of rawImports) {
+      if (rawPath in imports) {
+        addWarning(
+          module,
+          `Duplicate (dynamic) import from \`${rawPath}\``,
+          rawImport.start,
+          rawImport.end,
+          source,
+        );
+      }
+
+      if (importObject.namespace !== undefined) {
+        addWarning(
+          module,
+          `Duplicate dynamic import from \`${rawPath}\``,
+          rawImport.start,
+          rawImport.end,
+          source,
+        );
+      } else {
+        importObject.namespace = {kind: 'dynamic import'};
+      }
+    }
+
+    if (!(rawPath in imports)) {
+      imports[rawPath] = importObject;
+    }
+  }
+
+  for (const rawPath in requires) {
+    const rawImports = requires[rawPath]!;
+    const importObject: Import =
+      rawPath in imports
+        ? imports[rawPath]!
+        : {start: rawImports[0]!.start, end: rawImports[0]!.end};
+
+    for (const rawImport of rawImports) {
+      if (rawPath in imports) {
+        addWarning(
+          module,
+          `Duplicate (require) import from \`${rawPath}\``,
+          rawImport.start,
+          rawImport.end,
+          source,
+        );
+      }
+
+      if (importObject.namespace !== undefined) {
+        addWarning(
+          module,
+          `Duplicate require from \`${rawPath}\``,
+          rawImport.start,
+          rawImport.end,
+          source,
+        );
+      } else {
+        importObject.namespace = {kind: 'require'};
       }
     }
 
@@ -208,12 +321,16 @@ export const mergeImportsExports = (
         module,
         `Duplicate name \`${name}\` as \`${declarationExport.kind}\` declaration export`,
         declarationExport.start,
+        declarationExport.end,
+        source,
       );
     } else if (name in RESERVED_WORDS) {
       addError(
         module,
         `Reserved word \`${name}\` cannot be an identifier as \`${declarationExport.kind}\` declaration export`,
         declarationExport.start,
+        declarationExport.end,
+        source,
       );
     } else {
       moduleNames[name] = true;
@@ -230,6 +347,8 @@ export const mergeImportsExports = (
             module,
             `Duplicate default export by \`${namedExport.names[name]?.by}\` in named export`,
             namedExport.start,
+            namedExport.end,
+            source,
           );
         } else {
           module.defaultExport = {
@@ -239,7 +358,13 @@ export const mergeImportsExports = (
           };
         }
       } else if (name in exports) {
-        addError(module, `Duplicate exported name \`${name}\` in named export`, namedExport.start);
+        addError(
+          module,
+          `Duplicate exported name \`${name}\` in named export`,
+          namedExport.start,
+          namedExport.end,
+          source,
+        );
       } else {
         exports[name] = {
           start: namedExport.start,
@@ -263,7 +388,13 @@ export const mergeImportsExports = (
 
     for (const rawReexport of rawReexports) {
       if (rawReexport !== rawReexports[0]) {
-        addWarning(module, `Duplicate named reexport from \`${rawPath}\``, rawReexport.start);
+        addWarning(
+          module,
+          `Duplicate named reexport from \`${rawPath}\``,
+          rawReexport.start,
+          rawReexport.end,
+          source,
+        );
       }
 
       for (const name in rawReexport.names) {
@@ -272,6 +403,8 @@ export const mergeImportsExports = (
             module,
             `Duplicate exported name \`${name}\` in reexport from \`${rawPath}\``,
             rawReexport.start,
+            rawReexport.end,
+            source,
           );
 
           continue;
@@ -282,14 +415,16 @@ export const mergeImportsExports = (
           kind: 'reexport',
           ...rawReexport.names[name],
         } as const;
-        const by: Name = exportObject.by ?? name;
+        const {by = name} = exportObject;
 
         if (name === 'default') {
           if (module.defaultExport !== undefined) {
             addError(
               module,
-              `Duplicate default export by ${by} in reexport from \`${rawPath}\``,
+              `Duplicate default export by \`${by}\` in reexport from \`${rawPath}\``,
               rawReexport.start,
+              rawReexport.end,
+              source,
             );
           } else {
             module.defaultExport = {
@@ -314,6 +449,8 @@ export const mergeImportsExports = (
             module,
             `Duplicate reexported name \`${by}\` (as \`${name}\`) from \`${rawPath}\``,
             rawReexport.start,
+            rawReexport.end,
+            source,
           );
         } else {
           byNames[by] = true;
@@ -335,7 +472,13 @@ export const mergeImportsExports = (
 
     for (const {end, namespace, start} of rawReexports) {
       if (rawPath in reexports) {
-        addWarning(module, `Duplicate (namespace) reexport from \`${rawPath}\``, start);
+        addWarning(
+          module,
+          `Duplicate (namespace) reexport from \`${rawPath}\``,
+          start,
+          end,
+          source,
+        );
       }
 
       if (namespace in exports) {
@@ -343,6 +486,8 @@ export const mergeImportsExports = (
           module,
           `Duplicate exported name \`${namespace}\` (as namespace) in reexport from \`${rawPath}\``,
           start,
+          end,
+          source,
         );
 
         continue;
@@ -354,6 +499,8 @@ export const mergeImportsExports = (
             module,
             `Duplicate default export by namespace in reexport from \`${rawPath}\``,
             start,
+            end,
+            source,
           );
         } else {
           module.defaultExport = {start, end, from: rawPath, namespace: true};
@@ -387,9 +534,9 @@ export const mergeImportsExports = (
 
     reexportObject.star = true;
 
-    for (const {start} of rawReexports) {
+    for (const {start, end} of rawReexports) {
       if (rawPath in reexports) {
-        addWarning(module, `Duplicate (star) reexport from \`${rawPath}\``, start);
+        addWarning(module, `Duplicate (star) reexport from \`${rawPath}\``, start, end, source);
       }
     }
 
