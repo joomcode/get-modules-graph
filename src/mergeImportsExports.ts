@@ -1,4 +1,4 @@
-import {addError, addWarning, RESERVED_WORDS} from './utils';
+import {addError, addWarning, RESERVED_WORDS} from './utils.js';
 
 import type {Export, Import, ImportsExports, Module, Name, RawPath, Reexport} from './types';
 

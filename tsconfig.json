@@ -3,22 +3,26 @@
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
     "declaration": true,
+    "esModuleInterop": true,
     "exactOptionalPropertyTypes": true,
-    "forceConsistentCasingInFileNames": true,
-    "outDir": "build",
-    "module": "NodeNext",
+    "isolatedDeclarations": true,
+    "module": "preserve",
     "noEmitOnError": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noImplicitReturns": true,
     "noPropertyAccessFromIndexSignature": true,
     "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "outDir": "./build",
     "skipLibCheck": true,
     "strict": true,
     "target": "ES2018",
-    "types": ["node"]
+    "types": ["node"],
+    "useDefineForClassFields": true,
+    "verbatimModuleSyntax": true
   },
-  "files": ["./spec/index.spec.ts"]
+  "files": ["./convertEsmToCjs.ts", "./spec/index.spec.ts"]
 }

@@ -1,7 +1,7 @@
 import {join, parse} from 'node:path';
 
-import {processModule} from './processModule';
-import {readDirectory} from './utils';
+import {processModule} from './processModule.js';
+import {readDirectory} from './utils.js';
 
 import type {Context, DirectoryPath, Module, ResolvedPath} from './types';
 

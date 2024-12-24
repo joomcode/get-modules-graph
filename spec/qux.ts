@@ -1,4 +1,4 @@
-import {destructuringFoo, destructuringBar} from './baz';
+import {destructuringFoo, destructuringBar} from './baz.js';
 
 export default 42;
 

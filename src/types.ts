@@ -28,9 +28,8 @@ type ExpectedExportKind = 'both' | 'import' | 'reexport';
  * `IsEqual<{foo: string}, {foo: string}>` = `true`.
  * `IsEqual<{readonly foo: string}, {foo: string}>` = `false`.
  */
-type IsEqual<X, Y> = (<Type>() => Type extends X ? 1 : 2) extends <Type>() => Type extends Y ? 1 : 2
-  ? true
-  : false;
+type IsEqual<X, Y> =
+  (<Type>() => Type extends X ? 1 : 2) extends <Type>() => Type extends Y ? 1 : 2 ? true : false;
 
 /**
  * Mutable packages object for internal functions.

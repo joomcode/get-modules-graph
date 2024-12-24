@@ -1,4 +1,4 @@
-import {completeDependency} from './completeDependency';
+import {completeDependency} from './completeDependency.js';
 
 import type {Context, Module, ModulePath} from './types';
 

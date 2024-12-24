@@ -1,4 +1,4 @@
-import {addError, waitTasks} from './utils';
+import {addError, waitTasks} from './utils.js';
 
 import type {Context, Module} from './types';
 

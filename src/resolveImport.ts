@@ -1,4 +1,4 @@
-import {addError} from './utils';
+import {addError} from './utils.js';
 
 import type {
   Graph,

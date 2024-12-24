@@ -126,9 +126,6 @@ Requires [node](https://nodejs.org/en/) version 10 or higher:
 npm install get-modules-graph
 ```
 
-`get-modules-graph` works in any environment that supports ES2018
-(because package uses [RegExp Named Capture Groups](https://github.com/tc39/proposal-regexp-named-groups)).
-
 ## License
 
 [MIT][license-url]

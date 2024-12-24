@@ -1,12 +1,12 @@
 import {readFile} from 'node:fs/promises';
 import {normalize} from 'node:path';
 
-import {mergeImportsExports} from './mergeImportsExports';
-import {processImportModule} from './processImportModule';
-import {processImportPackage} from './processImportPackage';
-import {processReexportModule} from './processReexportModule';
-import {processReexportPackage} from './processReexportPackage';
-import {addError, parseImportsExports, waitTasks} from './utils';
+import {mergeImportsExports} from './mergeImportsExports.js';
+import {processImportModule} from './processImportModule.js';
+import {processImportPackage} from './processImportPackage.js';
+import {processReexportModule} from './processReexportModule.js';
+import {processReexportPackage} from './processReexportPackage.js';
+import {addError, parseImportsExports, waitTasks} from './utils.js';
 
 import type {
   Context,

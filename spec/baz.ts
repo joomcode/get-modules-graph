@@ -1,9 +1,11 @@
-import qux from './qux';
+import qux from './qux.js';
 
-export {default as default} from './qux';
+export {default as default} from './qux.js';
 
 export const baz = 0;
 
 export type Type = typeof qux;
 
-export const {foo: destructuringFoo, bar: destructuringBar}: {foo?: object; bar?: object} = {};
+export const destructuringFoo: object = {};
+
+export const destructuringBar: object = {};

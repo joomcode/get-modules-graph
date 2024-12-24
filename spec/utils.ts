@@ -10,7 +10,9 @@ export function assert(value: boolean, message: string): asserts value is true {
   console.log(' ✅', message);
 }
 
-export const assertEqualExceptNumbers = (a: object, b: object, message: string) => {
+type AssertEqualExceptNumbers = (a: object, b: object, message: string) => void;
+
+export const assertEqualExceptNumbers: AssertEqualExceptNumbers = (a, b, message) => {
   // The keys need to be sorted because their order depends on
   // the asynchronous race when reading modules from the file system.
   const aJson = JSON.stringify(sortJsonKeys(a)).replace(/\d+/g, '0');
@@ -31,6 +33,7 @@ export const assertEqualExceptNumbers = (a: object, b: object, message: string) 
   assert(true, message);
 };
 
-export const ok = (message: string) => console.log(`\x1B[32m[OK]\x1B[39m ${message}`);
+export const ok: (message: string) => void = (message) =>
+  console.log(`\x1B[32m[OK]\x1B[39m ${message}`);
 
 export let testsCount = 0;

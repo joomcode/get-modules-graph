@@ -2,9 +2,8 @@ export * from 'node:fs';
 
 export * as fs from 'node:fs';
 
-export * from './foo';
-
-// @ts-expect-error
-export {baz as bar} from './foo';
+export * from './foo.js';
 
 export const foo = 3;
+
+export const bar = 4;

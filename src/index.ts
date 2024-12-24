@@ -1,8 +1,8 @@
 import {normalize} from 'node:path';
 
-import {processCircularDependencies} from './processCircularDependencies';
-import {processModule} from './processModule';
-import {waitTasks} from './utils';
+import {processCircularDependencies} from './processCircularDependencies.js';
+import {processModule} from './processModule.js';
+import {waitTasks} from './utils.js';
 
 import type {Context, Graph, ModulePath, Mutable, Options, ParseOptions} from './types';
 
@@ -86,7 +86,7 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
   return promise;
 };
 
-export {resolveImports} from './resolveImports';
-export {resolveReexports} from './resolveReexports';
+export {resolveImports} from './resolveImports.js';
+export {resolveReexports} from './resolveReexports.js';
 
 export type {Graph, Module, Options, Package} from './types';

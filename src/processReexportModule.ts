@@ -1,6 +1,6 @@
-import {completeDependency} from './completeDependency';
-import {processResolvedPath} from './processResolvedPath';
-import {addWarning} from './utils';
+import {completeDependency} from './completeDependency.js';
+import {processResolvedPath} from './processResolvedPath.js';
+import {addWarning} from './utils.js';
 
 import type {Context, Module, Name, RawPath, ResolvedPath} from './types';
 

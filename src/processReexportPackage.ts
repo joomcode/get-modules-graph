@@ -1,4 +1,4 @@
-import {addWarning} from './utils';
+import {addWarning} from './utils.js';
 
 import type {Context, Module, PackagePath, RawPath} from './types';
 

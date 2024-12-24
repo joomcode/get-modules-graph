@@ -1,4 +1,4 @@
-import {resolveImport} from './resolveImport';
+import {resolveImport} from './resolveImport.js';
 
 import type {Graph, Module} from './types';
 

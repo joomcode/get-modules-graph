@@ -10,15 +10,15 @@ export const expectedBarModule: Module<number> = {
   uncompletedDependenciesCount,
   warnings: {
     '0': "Duplicate (star) reexport from `node:fs`:\nexport * from 'node:fs';",
-    '1': "Duplicate (star) reexport from `./foo`:\nexport * from './foo';",
+    '1': "Duplicate (star) reexport from `./foo.js`:\nexport * from './foo.js';",
   },
   exports: {
     foo: {start, end, kind: 'const'},
-    bar: {from: './foo', kind: 'reexport', by: 'baz'},
+    bar: {from: './foo.js', kind: 'reexport', by: 'baz'},
     fs: {from: 'node:fs', kind: 'reexport', namespace: true},
   },
   reexports: {
-    './foo': {
+    './foo.js': {
       start,
       end,
       names: {
@@ -38,17 +38,17 @@ export const expectedBarModule: Module<number> = {
   },
   reexportedPackages: {'node:fs': {'node:fs': true}},
   sourceData,
-  reexportedModules: {'spec/foo.ts': {'./foo': true}},
-  reexportedByModules: {'spec/foo.ts': {'./bar': true}},
+  reexportedModules: {'spec/foo.ts': {'./foo.js': true}},
+  reexportedByModules: {'spec/foo.ts': {'./bar.js': true}},
   expectedExports: {bar: {'spec/foo.ts': 'reexport'}},
 };
 
 export const expectedBazModule: Module<number> = {
   path: 'spec/baz.ts',
   uncompletedDependenciesCount,
-  defaultExport: {start, end, by: 'default', from: './qux'},
+  defaultExport: {start, end, by: 'default', from: './qux.js'},
   imports: {
-    './qux': {
+    './qux.js': {
       start,
       end,
       default: 'qux',
@@ -62,7 +62,7 @@ export const expectedBazModule: Module<number> = {
     destructuringBar: {start, end, kind: 'destructuring const'},
   },
   reexports: {
-    './qux': {
+    './qux.js': {
       start,
       end,
       default: 'default',
@@ -73,8 +73,8 @@ export const expectedBazModule: Module<number> = {
   sourceData,
   importedByModules: {
     'spec/index.spec.ts': {'./baz': true},
-    'spec/foo.ts': {'./baz': true},
-    'spec/qux.ts': {'./baz': true},
+    'spec/foo.ts': {'./baz.js': true},
+    'spec/qux.ts': {'./baz.js': true},
   },
   expectedExports: {
     baz: {'spec/foo.ts': 'both'},
@@ -82,9 +82,9 @@ export const expectedBazModule: Module<number> = {
     destructuringBar: {'spec/qux.ts': 'import'},
   },
   expectedDefaultExport: {'spec/foo.ts': 'both'},
-  reexportedByModules: {'spec/foo.ts': {'./baz': true}},
-  importedModules: {'spec/qux.ts': {'./qux': true}},
-  reexportedModules: {'spec/qux.ts': {'./qux': true}},
+  reexportedByModules: {'spec/foo.ts': {'./baz.js': true}},
+  importedModules: {'spec/qux.ts': {'./qux.js': true}},
+  reexportedModules: {'spec/qux.ts': {'./qux.js': true}},
 };
 
 export const expectedFooModule: Module<number> = {
@@ -92,13 +92,13 @@ export const expectedFooModule: Module<number> = {
   uncompletedDependenciesCount,
   warnings: {
     '0': "Duplicate (namespace) import from `node:assert`:\nimport assert, * as asAssert from 'node:assert';\nDuplicate default import `assert` from `node:assert`:\nimport assert, * as asAssert from 'node:assert';",
-    '1': "Duplicate named import from `./baz`:\nimport {baz as asBaz} from './baz';",
-    '2': "Duplicate (namespace) import from `./baz`:\nimport alsoDefault, * as asAlsoDefault from './baz';\nDuplicate default import `alsoDefault` from `./baz`:\nimport alsoDefault, * as asAlsoDefault from './baz';",
-    '3': "Duplicate (star) reexport from `./bar`:\nexport * from './bar';",
-    '4': "Duplicate (namespace) reexport from `./bar`:\nexport * as Bar from './bar';",
-    '5': "Duplicate named reexport from `./baz`:\nexport {baz as default} from './baz';",
+    '1': "Duplicate named import from `./baz.js`:\nimport {baz as asBaz} from './baz.js';",
+    '2': "Duplicate (namespace) import from `./baz.js`:\nimport alsoDefault, * as asAlsoDefault from './baz.js';\nDuplicate default import `alsoDefault` from `./baz.js`:\nimport alsoDefault, * as asAlsoDefault from './baz.js';",
+    '3': "Duplicate (star) reexport from `./bar.js`:\nexport * from './bar.js';",
+    '4': "Duplicate (namespace) reexport from `./bar.js`:\nexport * as Bar from './bar.js';",
+    '5': "Duplicate named reexport from `./baz.js`:\nexport {baz as default} from './baz.js';",
   },
-  defaultExport: {start, end, by: 'baz', from: './baz'},
+  defaultExport: {start, end, by: 'baz', from: './baz.js'},
   imports: {
     'node:assert': {
       start,
@@ -119,7 +119,7 @@ export const expectedFooModule: Module<number> = {
       },
       packagePath: 'node:assert/strict',
     },
-    './baz': {
+    './baz.js': {
       start,
       end,
       default: 'asDefault',
@@ -132,12 +132,12 @@ export const expectedFooModule: Module<number> = {
     },
   },
   exports: {
-    baz: {from: './bar', kind: 'reexport', by: 'bar'},
-    asDefault: {from: './baz', kind: 'reexport', by: 'default'},
-    Bar: {from: './bar', kind: 'reexport', namespace: true},
+    baz: {from: './bar.js', kind: 'reexport', by: 'bar'},
+    asDefault: {from: './baz.js', kind: 'reexport', by: 'default'},
+    Bar: {from: './bar.js', kind: 'reexport', namespace: true},
   },
   reexports: {
-    './bar': {
+    './bar.js': {
       start,
       end,
       names: {
@@ -152,7 +152,7 @@ export const expectedFooModule: Module<number> = {
         read: {kind: 'from packages', name: 'read', packagesPaths: ['node:fs']},
       },
     },
-    './baz': {
+    './baz.js': {
       start,
       end,
       default: 'baz',
@@ -166,7 +166,7 @@ export const expectedFooModule: Module<number> = {
     'node:assert/strict': {'node:assert/strict': true},
   },
   sourceData,
-  importedByModules: {'spec/index.spec.ts': {'./foo': true}},
+  importedByModules: {'spec/index.spec.ts': {'./foo.js': true}},
   expectedExports: {
     Bar: {'spec/index.spec.ts': 'import'},
     baz: {'spec/index.spec.ts': 'import', 'spec/bar.ts': 'reexport'},
@@ -175,7 +175,7 @@ export const expectedFooModule: Module<number> = {
     read: {'spec/index.spec.ts': 'import'},
   },
   expectedDefaultExport: {'spec/index.spec.ts': 'import'},
-  importedModules: {'spec/baz.ts': {'./baz': true}},
-  reexportedModules: {'spec/baz.ts': {'./baz': true}, 'spec/bar.ts': {'./bar': true}},
-  reexportedByModules: {'spec/bar.ts': {'./foo': true}},
+  importedModules: {'spec/baz.ts': {'./baz.js': true}},
+  reexportedModules: {'spec/baz.ts': {'./baz.js': true}, 'spec/bar.ts': {'./bar.js': true}},
+  reexportedByModules: {'spec/bar.ts': {'./foo.js': true}},
 };
