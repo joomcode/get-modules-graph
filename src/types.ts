@@ -8,40 +8,6 @@ import type {
 } from 'parse-imports-exports';
 
 /**
- * Readonly type with recursive applying.
- * `DeepReadonly<{foo: {bar: 0}}>` = `{readonly foo: {readonly bar: 0}}`.
- */
-type DeepReadonly<Type> = {readonly [Key in keyof Type]: DeepReadonly<Type[Key]>};
-
-/**
- * Default export of module.
- */
-type DefaultExport = Position & {by?: Name; from?: RawPath; namespace?: true};
-
-/**
- * Kind of expected export of module.
- */
-type ExpectedExportKind = 'both' | 'import' | 'reexport';
-
-/**
- * Returns `true` if types are exactly equal, `false` otherwise.
- * `IsEqual<{foo: string}, {foo: string}>` = `true`.
- * `IsEqual<{readonly foo: string}, {foo: string}>` = `false`.
- */
-type IsEqual<X, Y> =
-  (<Type>() => Type extends X ? 1 : 2) extends <Type>() => Type extends Y ? 1 : 2 ? true : false;
-
-/**
- * Mutable packages object for internal functions.
- */
-type Packages = Record<PackagePath, Package>;
-
-/**
- * Position of import, export or reexport statement in source of module.
- */
-type Position = {start: number; end: number};
-
-/**
  * Context of graph traversal process for internal functions.
  */
 export type Context = Readonly<{
@@ -322,3 +288,37 @@ export type ResolvedPath = string;
  * Source of module.
  */
 export type Source = string;
+
+/**
+ * Readonly type with recursive applying.
+ * `DeepReadonly<{foo: {bar: 0}}>` = `{readonly foo: {readonly bar: 0}}`.
+ */
+type DeepReadonly<Type> = {readonly [Key in keyof Type]: DeepReadonly<Type[Key]>};
+
+/**
+ * Default export of module.
+ */
+type DefaultExport = Position & {by?: Name; from?: RawPath; namespace?: true};
+
+/**
+ * Kind of expected export of module.
+ */
+type ExpectedExportKind = 'both' | 'import' | 'reexport';
+
+/**
+ * Returns `true` if types are exactly equal, `false` otherwise.
+ * `IsEqual<{foo: string}, {foo: string}>` = `true`.
+ * `IsEqual<{readonly foo: string}, {foo: string}>` = `false`.
+ */
+type IsEqual<X, Y> =
+  (<Type>() => Type extends X ? 1 : 2) extends <Type>() => Type extends Y ? 1 : 2 ? true : false;
+
+/**
+ * Mutable packages object for internal functions.
+ */
+type Packages = Record<PackagePath, Package>;
+
+/**
+ * Position of import, export or reexport statement in source of module.
+ */
+type Position = {start: number; end: number};

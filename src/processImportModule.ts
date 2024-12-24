@@ -1,5 +1,5 @@
 import {completeDependency} from './completeDependency.js';
-import {processResolvedPath} from './processResolvedPath.js';
+import * as processResolvedPathNamespace from './processResolvedPath.js';
 import {addWarning} from './utils.js';
 
 import type {Context, Module, RawPath, ResolvedPath} from './types';
@@ -13,7 +13,10 @@ export const processImportModule = async (
   rawPath: RawPath,
   resolvedPath: ResolvedPath,
 ): Promise<void> => {
-  const importedModule = await processResolvedPath(context, resolvedPath);
+  const importedModule = await processResolvedPathNamespace.processResolvedPath(
+    context,
+    resolvedPath,
+  );
   const importObject = module.imports![rawPath]!;
 
   if (importedModule instanceof Error) {

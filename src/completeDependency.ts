@@ -2,6 +2,19 @@ import {addError, waitTasks} from './utils.js';
 
 import type {Context, Module} from './types';
 
+/**
+ * Completes one dependency of module.
+ */
+export const completeDependency = (
+  context: Context,
+  module: Module,
+  tasks?: Promise<void>[],
+): void => {
+  const modulesToComplete: Module[] = [module];
+
+  completeNextDependency(context, modulesToComplete, tasks);
+};
+
 const completeNextDependency = (
   context: Context,
   modulesToComplete: Module[],
@@ -115,17 +128,4 @@ const completeNextDependency = (
   if (outerTasks === undefined) {
     waitTasks(context, tasks);
   }
-};
-
-/**
- * Completes one dependency of module.
- */
-export const completeDependency = (
-  context: Context,
-  module: Module,
-  tasks?: Promise<void>[],
-): void => {
-  const modulesToComplete: Module[] = [module];
-
-  completeNextDependency(context, modulesToComplete, tasks);
 };

@@ -24,7 +24,7 @@ for (const path of paths) {
       continue;
     }
 
-    const reexportedNames: string[] = [];
+    const allExportedNames: string[] = [];
     const filePath = join(path, fileName);
     let fileContent = readFileSync(filePath, {encoding: 'utf8'});
 
@@ -32,6 +32,11 @@ for (const path of paths) {
       /^import {([^}]+)} from ([^;]*);/gim,
       (_match, names, modulePath) =>
         `const {${names.replaceAll(' as ', ': ')}} = require(${replaceExtension(modulePath)});`,
+    );
+
+    fileContent = fileContent.replace(
+      /^import \* as ([^ ]+) from ([^;]*);/gim,
+      (_match, name, modulePath) => `const ${name} = require(${replaceExtension(modulePath)});`,
     );
 
     fileContent = fileContent.replace(
@@ -50,7 +55,7 @@ for (const path of paths) {
           name = name.includes(':') ? name.split(':')[1]! : name;
           name = name.trim();
 
-          reexportedNames.push(name === '__default' ? 'default' : name);
+          allExportedNames.push(name === '__default' ? 'default' : name);
 
           return name === '__default' ? 'default: __default' : name;
         });
@@ -63,18 +68,19 @@ for (const path of paths) {
       },
     );
 
-    fileContent = fileContent.replace(
-      /^export const ([^ ]+) /gim,
-      (_match, name) => `const ${name} = exports.${name} `,
-    );
+    fileContent = fileContent.replace(/^export const ([^ ]+) /gim, (_match, name) => {
+      allExportedNames.push(name);
+
+      return `const ${name} = exports.${name} `;
+    });
 
     fileContent = fileContent.replace(/^export default /gim, () => {
-      reexportedNames.push('default');
+      allExportedNames.push('default');
 
       return 'exports.default = ';
     });
 
-    const reexports = reexportedNames.map((name) => `exports.${name} = undefined;`).join('\n');
+    const reexports = allExportedNames.map((name) => `exports.${name} = undefined;`).join('\n');
 
     fileContent = `'use strict';\n${reexports}\n${fileContent}`;
 

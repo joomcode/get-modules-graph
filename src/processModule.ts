@@ -2,9 +2,9 @@ import {readFile} from 'node:fs/promises';
 import {normalize} from 'node:path';
 
 import {mergeImportsExports} from './mergeImportsExports.js';
-import {processImportModule} from './processImportModule.js';
+import * as processImportModuleNamespace from './processImportModule.js';
 import {processImportPackage} from './processImportPackage.js';
-import {processReexportModule} from './processReexportModule.js';
+import * as processReexportModuleNamespace from './processReexportModule.js';
 import {processReexportPackage} from './processReexportPackage.js';
 import {addError, parseImportsExports, waitTasks} from './utils.js';
 
@@ -17,8 +17,6 @@ import type {
   ResolvedPath,
   Source,
 } from './types';
-
-const READ_FILE_OPTIONS = {encoding: 'utf8'} as const;
 
 /**
  * Processes module by module path.
@@ -79,7 +77,9 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
       hasDependencies = true;
       module.uncompletedDependenciesCount += 1;
 
-      tasks.push(processImportModule(context, module, rawPath, normalizedPath));
+      tasks.push(
+        processImportModuleNamespace.processImportModule(context, module, rawPath, normalizedPath),
+      );
     } else {
       processImportPackage(context, module, rawPath, normalizedPath);
     }
@@ -102,7 +102,14 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
       hasDependencies = true;
       module.uncompletedDependenciesCount += 1;
 
-      tasks.push(processReexportModule(context, module, rawPath, normalizedPath));
+      tasks.push(
+        processReexportModuleNamespace.processReexportModule(
+          context,
+          module,
+          rawPath,
+          normalizedPath,
+        ),
+      );
     } else {
       processReexportPackage(context, module, rawPath, normalizedPath);
     }
@@ -158,3 +165,5 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
   return module;
 };
+
+const READ_FILE_OPTIONS = {encoding: 'utf8'} as const;

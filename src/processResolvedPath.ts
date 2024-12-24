@@ -1,6 +1,6 @@
 import {join, parse} from 'node:path';
 
-import {processModule} from './processModule.js';
+import * as processModuleNamespace from './processModule.js';
 import {readDirectory} from './utils.js';
 
 import type {Context, DirectoryPath, Module, ResolvedPath} from './types';
@@ -85,7 +85,7 @@ export const processResolvedPath = async (
 
   const modulePath = join(directoryPath, moduleName);
 
-  const module = await processModule(context, modulePath);
+  const module = await processModuleNamespace.processModule(context, modulePath);
 
   resolvedPaths[resolvedPath] = module;
   resolve!(module);

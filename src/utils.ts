@@ -5,11 +5,6 @@ import type {Dirent} from 'node:fs';
 import type {Context, DirectoryContent, DirectoryPath, Module} from './types';
 
 /**
- * Options to read directory content (for `readdir` function).
- */
-const READ_DIRECTORY_OPTIONS = {withFileTypes: true} as const;
-
-/**
  * Adds some error to module object.
  */
 export const addError = (
@@ -200,3 +195,8 @@ export const waitTasks = (context: Context, newTasks: readonly Promise<unknown>[
     );
   }
 };
+
+/**
+ * Options to read directory content (for `readdir` function).
+ */
+const READ_DIRECTORY_OPTIONS = {withFileTypes: true} as const;
