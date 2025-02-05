@@ -34,7 +34,7 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
     uncompletedDependenciesCount: 0,
   };
 
-  let resolve: ((module: Module) => void) | undefined;
+  var resolve: ((module: Module) => void) | undefined;
 
   modules[modulePath] = new Promise<Module>((res) => {
     resolve = res;
@@ -54,16 +54,16 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
   // cannot use `uncompletedDependenciesCount > 0` instead, because `processImportModule`/`processReexportModule`
   // calls can synchronously return `uncompletedDependenciesCount` to 0
-  let hasDependencies = false;
+  var hasDependencies = false;
   const resolvedPaths: Record<RawPath, string | undefined> = {__proto__: null} as {};
   const tasks: Promise<unknown>[] = [];
 
   for (const rawPath in module.imports) {
-    const importObject = module.imports[rawPath]!;
-    const resolvedPath = resolvePath(modulePath, rawPath);
+    const importObject = module.imports[rawPath as RawPath]!;
+    const resolvedPath = resolvePath(modulePath, rawPath as RawPath);
 
     if (resolvedPath === undefined) {
-      resolvedPaths[rawPath] = undefined;
+      resolvedPaths[rawPath as RawPath] = undefined;
       importObject.isSkipped = true;
 
       continue;
@@ -71,24 +71,31 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
 
     const normalizedPath: PackagePath | ResolvedPath = normalize(resolvedPath);
 
-    resolvedPaths[rawPath] = resolvedPath;
+    resolvedPaths[rawPath as RawPath] = resolvedPath;
 
     if (resolvedPath[0] === '.') {
       hasDependencies = true;
       module.uncompletedDependenciesCount += 1;
 
       tasks.push(
-        processImportModuleNamespace.processImportModule(context, module, rawPath, normalizedPath),
+        processImportModuleNamespace.processImportModule(
+          context,
+          module,
+          rawPath as RawPath,
+          normalizedPath,
+        ),
       );
     } else {
-      processImportPackage(context, module, rawPath, normalizedPath);
+      processImportPackage(context, module, rawPath as RawPath, normalizedPath);
     }
   }
 
   for (const rawPath in module.reexports) {
-    const reexport = module.reexports[rawPath]!;
+    const reexport = module.reexports[rawPath as RawPath]!;
     const resolvedPath =
-      rawPath in resolvedPaths ? resolvedPaths[rawPath] : resolvePath(modulePath, rawPath);
+      rawPath in resolvedPaths
+        ? resolvedPaths[rawPath as RawPath]
+        : resolvePath(modulePath, rawPath as RawPath);
 
     if (resolvedPath === undefined) {
       reexport.isSkipped = true;
@@ -106,12 +113,12 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
         processReexportModuleNamespace.processReexportModule(
           context,
           module,
-          rawPath,
+          rawPath as RawPath,
           normalizedPath,
         ),
       );
     } else {
-      processReexportPackage(context, module, rawPath, normalizedPath);
+      processReexportPackage(context, module, rawPath as RawPath, normalizedPath);
     }
   }
 

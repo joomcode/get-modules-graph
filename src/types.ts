@@ -4,7 +4,9 @@ import type {ParsedPath} from 'node:path';
 import type {
   ImportsExports,
   Kind as DeclarationExportKind,
+  Name,
   Options as ParseOptions,
+  Path as RawPath,
 } from 'parse-imports-exports';
 
 /**
@@ -39,6 +41,11 @@ export type DirectoryContent = Record<string, Dirent>;
  * Exact relative path to directory from current working directory.
  */
 export type DirectoryPath = string;
+
+/**
+ * Excludes `undefined` from some `Type`.
+ */
+export type ExcludeUndefined<Type> = Exclude<Type, undefined>;
 
 /**
  * One export name.
@@ -130,7 +137,7 @@ export type Mutable<Type> = {
 /**
  * Imported or exported name (identifier).
  */
-export type Name = string;
+export type {Name};
 
 /**
  * Options of `getModulesGraph` function.
@@ -247,7 +254,7 @@ export type PackagePath = string;
 /**
  * Raw path to a module or package after the `from` keyword.
  */
-export type RawPath = string;
+export type {RawPath};
 
 /**
  * Object with reexports from one module.

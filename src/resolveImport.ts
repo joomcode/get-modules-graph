@@ -1,12 +1,14 @@
 import {addError} from './utils.js';
 
 import type {
+  ExcludeUndefined,
   Graph,
   Module,
   ModulePath,
   ModulesChain,
   Name,
   PackagePath,
+  RawPath,
   ResolvedImport,
 } from './types';
 
@@ -21,7 +23,7 @@ export const resolveImport = <SourceData, DependenciesData>(
 ): ResolvedImport => {
   const {path, reexports} = module;
 
-  let currentModulesChain: ModulesChain | undefined = modulesChain;
+  var currentModulesChain: ModulesChain | undefined = modulesChain;
 
   while (currentModulesChain !== undefined) {
     if (currentModulesChain.modulePath === path && currentModulesChain.name === name) {
@@ -238,12 +240,12 @@ export const resolveImport = <SourceData, DependenciesData>(
     return nameObject.resolved;
   }
 
-  let firstResolvedThroughStar: ResolvedImport | undefined;
-  let modulePathOfFirstResolved: ModulePath | undefined;
+  var firstResolvedThroughStar: ResolvedImport | undefined;
+  var modulePathOfFirstResolved: ModulePath | undefined;
   const starredPackagesPaths: PackagePath[] = [];
 
   for (const rawPath in reexports) {
-    const reexportObject = reexports[rawPath]!;
+    const reexportObject = reexports[rawPath as RawPath]!;
 
     if (reexportObject.star !== true) {
       continue;
@@ -273,23 +275,18 @@ export const resolveImport = <SourceData, DependenciesData>(
 
     let {resolvedThroughStar} = reexportObject;
 
-    if (resolvedThroughStar === undefined) {
-      reexportObject.resolvedThroughStar = resolvedThroughStar = {__proto__: null} as Exclude<
-        typeof resolvedThroughStar,
-        undefined
-      >;
-    }
+    resolvedThroughStar ??= reexportObject.resolvedThroughStar = {
+      __proto__: null,
+    } as ExcludeUndefined<typeof resolvedThroughStar>;
 
     let resolved = resolvedThroughStar[name];
 
-    if (resolved === undefined) {
-      resolvedThroughStar[name] = resolved = resolveImport<SourceData, DependenciesData>(
-        graph,
-        reexportedModule,
-        name,
-        newModulesChain,
-      );
-    }
+    resolved ??= resolvedThroughStar[name] = resolveImport<SourceData, DependenciesData>(
+      graph,
+      reexportedModule,
+      name,
+      newModulesChain,
+    );
 
     if (resolved === 'error' || resolved.kind === 'circular') {
       continue;

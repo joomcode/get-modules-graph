@@ -31,7 +31,7 @@ export const processCircularDependencies = (context: Context): void | Promise<vo
     }
   }
 
-  let modulesKeys: readonly ModulePath[];
+  var modulesKeys: readonly ModulePath[];
 
   proccesChain: while ((modulesKeys = Object.keys(modulesWithCircularDependencies)).length > 0) {
     let currentModulePath: ModulePath = modulesKeys[0]!;

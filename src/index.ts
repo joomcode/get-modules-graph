@@ -89,4 +89,4 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
 export {resolveImports} from './resolveImports.js';
 export {resolveReexports} from './resolveReexports.js';
 
-export type {Graph, Module, Options, Package} from './types';
+export type {Graph, Module, Name, Options, Package, RawPath} from './types';

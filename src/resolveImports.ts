@@ -1,6 +1,6 @@
 import {resolveImport} from './resolveImport.js';
 
-import type {Graph, Module} from './types';
+import type {Graph, Module, Name, RawPath} from './types';
 
 /**
  * Resolves all imports of module in graph of ECMAScript/TypeScript modules.
@@ -14,7 +14,7 @@ export const resolveImports = <SourceData, DependenciesData>(
   {imports, path}: Module<SourceData, DependenciesData>,
 ): void => {
   for (const rawPath in imports) {
-    const importObject = imports[rawPath]!;
+    const importObject = imports[rawPath as RawPath]!;
 
     if (importObject.isSkipped || importObject.moduleResolveError !== undefined) {
       continue;
@@ -24,13 +24,13 @@ export const resolveImports = <SourceData, DependenciesData>(
 
     if (packagePath !== undefined) {
       for (const name in names) {
-        const nameObject = names[name]!;
+        const nameObject = names[name as Name]!;
 
         if (nameObject.resolved !== undefined) {
           continue;
         }
 
-        nameObject.resolved = {kind: 'name from package', name, packagePath};
+        nameObject.resolved = {kind: 'name from package', name: name as Name, packagePath};
       }
 
       if (importObject.default !== undefined && importObject.resolvedDefault === undefined) {
@@ -55,7 +55,7 @@ export const resolveImports = <SourceData, DependenciesData>(
     }
 
     for (const name in names) {
-      const nameObject = names[name]!;
+      const nameObject = names[name as Name]!;
 
       if (nameObject.resolved !== undefined) {
         continue;
@@ -64,7 +64,7 @@ export const resolveImports = <SourceData, DependenciesData>(
       nameObject.resolved = resolveImport<SourceData, DependenciesData>(
         graph,
         importedModule,
-        name,
+        name as Name,
       );
     }
 
@@ -72,7 +72,7 @@ export const resolveImports = <SourceData, DependenciesData>(
       importObject.resolvedDefault = resolveImport<SourceData, DependenciesData>(
         graph,
         importedModule,
-        'default',
+        'default' as Name,
       );
     }
   }

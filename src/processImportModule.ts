@@ -2,7 +2,7 @@ import {completeDependency} from './completeDependency.js';
 import * as processResolvedPathNamespace from './processResolvedPath.js';
 import {addWarning} from './utils.js';
 
-import type {Context, Module, RawPath, ResolvedPath} from './types';
+import type {Context, ExcludeUndefined, Module, Name, RawPath, ResolvedPath} from './types';
 
 /**
  * Processes import of module by raw import `from` path and resolved path.
@@ -33,75 +33,57 @@ export const processImportModule = async (
     completeDependency(context, module);
   }
 
-  let {importedModules} = module;
+  var {importedModules} = module;
 
-  if (importedModules === undefined) {
-    module.importedModules = importedModules = {__proto__: null} as Exclude<
-      typeof importedModules,
-      undefined
-    >;
-  }
+  importedModules ??= module.importedModules = {__proto__: null} as ExcludeUndefined<
+    typeof importedModules
+  >;
 
-  let importsRawPaths = importedModules[importedModule.path];
+  var importsRawPaths = importedModules[importedModule.path];
 
-  if (importsRawPaths === undefined) {
-    importedModules[importedModule.path] = importsRawPaths = {__proto__: null} as Exclude<
-      typeof importsRawPaths,
-      undefined
-    >;
-  }
+  importsRawPaths ??= importedModules[importedModule.path] = {__proto__: null} as ExcludeUndefined<
+    typeof importsRawPaths
+  >;
 
   importsRawPaths[rawPath] = true;
 
-  let {importedByModules} = importedModule;
+  var {importedByModules} = importedModule;
 
-  if (importedByModules === undefined) {
-    importedModule.importedByModules = importedByModules = {__proto__: null} as Exclude<
-      typeof importedByModules,
-      undefined
-    >;
-  }
+  importedByModules ??= importedModule.importedByModules = {__proto__: null} as ExcludeUndefined<
+    typeof importedByModules
+  >;
 
-  let importsByRawPaths = importedByModules[module.path];
+  var importsByRawPaths = importedByModules[module.path];
 
-  if (importsByRawPaths === undefined) {
-    importedByModules[module.path] = importsByRawPaths = {__proto__: null} as Exclude<
-      typeof importsByRawPaths,
-      undefined
-    >;
-  }
+  importsByRawPaths ??= importedByModules[module.path] = {__proto__: null} as ExcludeUndefined<
+    typeof importsByRawPaths
+  >;
 
   importsByRawPaths[rawPath] = true;
 
-  let {expectedExports} = importedModule;
+  var {expectedExports} = importedModule;
 
-  if (expectedExports === undefined) {
-    importedModule.expectedExports = expectedExports = {__proto__: null} as Exclude<
-      typeof expectedExports,
-      undefined
-    >;
-  }
+  expectedExports ??= importedModule.expectedExports = {__proto__: null} as ExcludeUndefined<
+    typeof expectedExports
+  >;
 
   const actualExports = importedModule.exports || {__proto__: null};
 
-  let hasStarReexport = false;
+  var hasStarReexport = false;
 
   for (const rawPath in importedModule.reexports) {
-    if (importedModule.reexports[rawPath]!.star) {
+    if (importedModule.reexports[rawPath as RawPath]!.star) {
       hasStarReexport = true;
       break;
     }
   }
 
   for (const name in importObject.names) {
-    let expectedExport = expectedExports[name];
+    let expectedExport = expectedExports[name as Name];
 
-    if (expectedExport === undefined) {
-      expectedExports[name] = expectedExport = {__proto__: null} as Exclude<
-        typeof expectedExport,
-        undefined
-      >;
-    }
+    expectedExport ??= expectedExports[name as Name] = {__proto__: null} as ExcludeUndefined<
+      typeof expectedExport
+    >;
 
     if (module.path in expectedExport) {
       if (expectedExport[module.path] === 'reexport') {
@@ -118,19 +100,16 @@ export const processImportModule = async (
     }
 
     if (hasStarReexport === false && !(name in actualExports)) {
-      importObject.names[name]!.resolved = 'error';
+      importObject.names[name as Name]!.resolved = 'error';
     }
   }
 
   if ('default' in importObject) {
     let {expectedDefaultExport} = importedModule;
 
-    if (expectedDefaultExport === undefined) {
-      importedModule.expectedDefaultExport = expectedDefaultExport = {__proto__: null} as Exclude<
-        typeof expectedDefaultExport,
-        undefined
-      >;
-    }
+    expectedDefaultExport ??= importedModule.expectedDefaultExport = {
+      __proto__: null,
+    } as ExcludeUndefined<typeof expectedDefaultExport>;
 
     if (module.path in expectedDefaultExport) {
       if (expectedDefaultExport[module.path] === 'reexport') {

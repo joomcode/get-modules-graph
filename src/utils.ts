@@ -2,7 +2,7 @@ import {readdir} from 'node:fs/promises';
 
 import type {Dirent} from 'node:fs';
 
-import type {Context, DirectoryContent, DirectoryPath, Module} from './types';
+import type {Context, DirectoryContent, DirectoryPath, ExcludeUndefined, Module} from './types';
 
 /**
  * Adds some error to module object.
@@ -14,11 +14,9 @@ export const addError = (
   endIndex?: number,
   source?: string,
 ): void => {
-  let {errors} = module;
+  var {errors} = module;
 
-  if (errors === undefined) {
-    module.errors = errors = {__proto__: null} as unknown as Exclude<typeof errors, undefined>;
-  }
+  errors ??= module.errors = {__proto__: null} as unknown as ExcludeUndefined<typeof errors>;
 
   const fullMessage =
     endIndex === undefined || source === undefined
@@ -39,14 +37,9 @@ export const addWarning = (
   endIndex?: number,
   source?: string,
 ): void => {
-  let {warnings} = module;
+  var {warnings} = module;
 
-  if (warnings === undefined) {
-    module.warnings = warnings = {__proto__: null} as unknown as Exclude<
-      typeof warnings,
-      undefined
-    >;
-  }
+  warnings ??= module.warnings = {__proto__: null} as unknown as ExcludeUndefined<typeof warnings>;
 
   const fullMessage =
     endIndex === undefined || source === undefined
@@ -70,7 +63,7 @@ export const readDirectory = async (
     return directories[directoryPath]!;
   }
 
-  let resolve: ((directoryContent: DirectoryContent | Error) => void) | undefined;
+  var resolve: ((directoryContent: DirectoryContent | Error) => void) | undefined;
 
   directories[directoryPath] = new Promise<DirectoryContent | Error>((res) => {
     resolve = res;

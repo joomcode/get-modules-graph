@@ -1,6 +1,6 @@
 import {resolveImport} from './resolveImport.js';
 
-import type {Graph, Module} from './types';
+import type {Graph, Module, Name, RawPath} from './types';
 
 /**
  * Resolves all reexports of module in graph of ECMAScript/TypeScript modules.
@@ -14,7 +14,7 @@ export const resolveReexports = <SourceData, DependenciesData>(
   {path, reexports}: Module<SourceData, DependenciesData>,
 ): void => {
   for (const rawPath in reexports) {
-    const reexportObject = reexports[rawPath]!;
+    const reexportObject = reexports[rawPath as RawPath]!;
 
     if (reexportObject.isSkipped || reexportObject.moduleResolveError !== undefined) {
       continue;
@@ -24,13 +24,13 @@ export const resolveReexports = <SourceData, DependenciesData>(
 
     if (packagePath !== undefined) {
       for (const name in names) {
-        const nameObject = names[name]!;
+        const nameObject = names[name as Name]!;
 
         if (nameObject.resolved !== undefined) {
           continue;
         }
 
-        const {by = name} = nameObject;
+        const {by = name as Name} = nameObject;
 
         nameObject.resolved =
           by === 'default'
@@ -39,7 +39,7 @@ export const resolveReexports = <SourceData, DependenciesData>(
       }
 
       for (const name in namespaces) {
-        const namespaceObject = namespaces[name]!;
+        const namespaceObject = namespaces[name as Name]!;
 
         if (namespaceObject.resolved !== undefined) {
           continue;
@@ -80,13 +80,13 @@ export const resolveReexports = <SourceData, DependenciesData>(
     }
 
     for (const name in names) {
-      const nameObject = names[name]!;
+      const nameObject = names[name as Name]!;
 
       if (nameObject.resolved !== undefined) {
         continue;
       }
 
-      const {by = name} = nameObject;
+      const {by = name as Name} = nameObject;
 
       nameObject.resolved = resolveImport<SourceData, DependenciesData>(
         graph,
@@ -96,7 +96,7 @@ export const resolveReexports = <SourceData, DependenciesData>(
     }
 
     for (const name in namespaces) {
-      const namespaceObject = namespaces[name]!;
+      const namespaceObject = namespaces[name as Name]!;
 
       if (namespaceObject.resolved !== undefined) {
         continue;

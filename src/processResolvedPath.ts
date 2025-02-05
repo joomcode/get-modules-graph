@@ -18,7 +18,7 @@ export const processResolvedPath = async (
     return resolvedPaths[resolvedPath]!;
   }
 
-  let resolve: ((module: Module | Error) => void) | undefined;
+  var resolve: ((module: Module | Error) => void) | undefined;
 
   resolvedPaths[resolvedPath] = new Promise<Module | Error>((res) => {
     resolve = res;
@@ -26,8 +26,8 @@ export const processResolvedPath = async (
 
   const parsedPath = parse(resolvedPath);
 
-  let directoryPath: DirectoryPath = parsedPath.dir;
-  let directoryContent = await readDirectory(directoryPath, directories);
+  var directoryPath: DirectoryPath = parsedPath.dir;
+  var directoryContent = await readDirectory(directoryPath, directories);
 
   if (directoryContent instanceof Error) {
     resolvedPaths[resolvedPath] = directoryContent;
@@ -36,7 +36,7 @@ export const processResolvedPath = async (
     return directoryContent;
   }
 
-  let moduleName = chooseModule(resolvedPath, parsedPath, directoryContent);
+  var moduleName = chooseModule(resolvedPath, parsedPath, directoryContent);
 
   if (!(moduleName in directoryContent)) {
     const error = new Error(

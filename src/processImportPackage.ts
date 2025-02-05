@@ -1,6 +1,6 @@
 import {addWarning} from './utils.js';
 
-import type {Context, Module, PackagePath, RawPath} from './types';
+import type {Context, ExcludeUndefined, Module, Name, PackagePath, RawPath} from './types';
 
 /**
  * Processes import of package by raw import `from` path and package path.
@@ -11,74 +11,54 @@ export const processImportPackage = (
   rawPath: RawPath,
   packagePath: PackagePath,
 ): void => {
-  let importedPackage = packages[packagePath];
+  var importedPackage = packages[packagePath];
 
-  if (importedPackage === undefined) {
-    packages[packagePath] = importedPackage = {path: packagePath};
-  }
+  importedPackage ??= packages[packagePath] = {path: packagePath};
 
   const importObject = module.imports![rawPath]!;
 
   importObject.packagePath = packagePath;
 
-  let {importedPackages} = module;
+  var {importedPackages} = module;
 
-  if (importedPackages === undefined) {
-    module.importedPackages = importedPackages = {__proto__: null} as Exclude<
-      typeof importedPackages,
-      undefined
-    >;
-  }
+  importedPackages ??= module.importedPackages = {__proto__: null} as ExcludeUndefined<
+    typeof importedPackages
+  >;
 
-  let importsRawPaths = importedPackages[packagePath];
+  var importsRawPaths = importedPackages[packagePath];
 
-  if (importsRawPaths === undefined) {
-    importedPackages[packagePath] = importsRawPaths = {__proto__: null} as Exclude<
-      typeof importsRawPaths,
-      undefined
-    >;
-  }
+  importsRawPaths ??= importedPackages[packagePath] = {__proto__: null} as ExcludeUndefined<
+    typeof importsRawPaths
+  >;
 
   importsRawPaths[rawPath] = true;
 
-  let {importedByModules} = importedPackage;
+  var {importedByModules} = importedPackage;
 
-  if (importedByModules === undefined) {
-    importedPackage.importedByModules = importedByModules = {__proto__: null} as Exclude<
-      typeof importedByModules,
-      undefined
-    >;
-  }
+  importedByModules ??= importedPackage.importedByModules = {__proto__: null} as ExcludeUndefined<
+    typeof importedByModules
+  >;
 
-  let importsByRawPaths = importedByModules[module.path];
+  var importsByRawPaths = importedByModules[module.path];
 
-  if (importsByRawPaths === undefined) {
-    importedByModules[module.path] = importsByRawPaths = {__proto__: null} as Exclude<
-      typeof importsByRawPaths,
-      undefined
-    >;
-  }
+  importsByRawPaths ??= importedByModules[module.path] = {__proto__: null} as ExcludeUndefined<
+    typeof importsByRawPaths
+  >;
 
   importsByRawPaths[rawPath] = true;
 
-  let {expectedExports} = importedPackage;
+  var {expectedExports} = importedPackage;
 
-  if (expectedExports === undefined) {
-    importedPackage.expectedExports = expectedExports = {__proto__: null} as Exclude<
-      typeof expectedExports,
-      undefined
-    >;
-  }
+  expectedExports ??= importedPackage.expectedExports = {__proto__: null} as ExcludeUndefined<
+    typeof expectedExports
+  >;
 
   for (const name in importObject.names) {
-    let expectedExport = expectedExports[name];
+    let expectedExport = expectedExports[name as Name];
 
-    if (expectedExport === undefined) {
-      expectedExports[name] = expectedExport = {__proto__: null} as Exclude<
-        typeof expectedExport,
-        undefined
-      >;
-    }
+    expectedExport ??= expectedExports[name as Name] = {__proto__: null} as ExcludeUndefined<
+      typeof expectedExport
+    >;
 
     if (module.path in expectedExport) {
       if (expectedExport[module.path] === 'reexport') {
@@ -98,12 +78,9 @@ export const processImportPackage = (
   if ('default' in importObject) {
     let {expectedDefaultExport} = importedPackage;
 
-    if (expectedDefaultExport === undefined) {
-      importedPackage.expectedDefaultExport = expectedDefaultExport = {__proto__: null} as Exclude<
-        typeof expectedDefaultExport,
-        undefined
-      >;
-    }
+    expectedDefaultExport ??= importedPackage.expectedDefaultExport = {
+      __proto__: null,
+    } as ExcludeUndefined<typeof expectedDefaultExport>;
 
     if (module.path in expectedDefaultExport) {
       if (expectedDefaultExport[module.path] === 'reexport') {

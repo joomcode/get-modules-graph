@@ -1,4 +1,4 @@
-import type {Module} from '../src';
+import type {Module, Name, RawPath} from '../src';
 
 const start = 0;
 const end = 0;
@@ -13,78 +13,85 @@ export const expectedBarModule: Module<number> = {
     '1': "Duplicate (star) reexport from `./foo.js`:\nexport * from './foo.js';",
   },
   exports: {
-    foo: {start, end, kind: 'const'},
-    bar: {from: './foo.js', kind: 'reexport', by: 'baz'},
-    fs: {from: 'node:fs', kind: 'reexport', namespace: true},
+    ['foo' as Name]: {start, end, kind: 'const'},
+    ['bar' as Name]: {from: './foo.js' as RawPath, kind: 'reexport', by: 'baz' as Name},
+    ['fs' as Name]: {from: 'node:fs' as RawPath, kind: 'reexport', namespace: true},
   },
   reexports: {
-    './foo.js': {
+    ['./foo.js' as RawPath]: {
       start,
       end,
       names: {
-        bar: {by: 'baz', resolved: {kind: 'circular', modulePath: 'spec/foo.ts', name: 'baz'}},
+        ['bar' as Name]: {
+          by: 'baz' as Name,
+          resolved: {kind: 'circular', modulePath: 'spec/foo.ts', name: 'baz' as Name},
+        },
       },
       star: true,
       modulePath: 'spec/foo.ts',
-      resolvedThroughStar: {read: {kind: 'circular', modulePath: 'spec/foo.ts', name: 'read'}},
+      resolvedThroughStar: {
+        ['read' as Name]: {kind: 'circular', modulePath: 'spec/foo.ts', name: 'read' as Name},
+      },
     },
-    'node:fs': {
+    ['node:fs' as RawPath]: {
       start,
       end,
-      namespaces: {fs: {resolved: {kind: 'namespace from package', packagePath: 'node:fs'}}},
+      namespaces: {
+        ['fs' as Name]: {resolved: {kind: 'namespace from package', packagePath: 'node:fs'}},
+      },
       star: true,
       packagePath: 'node:fs',
     },
   },
-  reexportedPackages: {'node:fs': {'node:fs': true}},
+  reexportedPackages: {'node:fs': {['node:fs' as RawPath]: true}},
   sourceData,
-  reexportedModules: {'spec/foo.ts': {'./foo.js': true}},
-  reexportedByModules: {'spec/foo.ts': {'./bar.js': true}},
-  expectedExports: {bar: {'spec/foo.ts': 'reexport'}},
+  reexportedModules: {'spec/foo.ts': {['./foo.js' as RawPath]: true}},
+  reexportedByModules: {'spec/foo.ts': {['./bar.js' as RawPath]: true}},
+  expectedExports: {['bar' as Name]: {'spec/foo.ts': 'reexport'}},
 };
 
 export const expectedBazModule: Module<number> = {
   path: 'spec/baz.ts',
   uncompletedDependenciesCount,
-  defaultExport: {start, end, by: 'default', from: './qux.js'},
+  defaultExport: {start, end, by: 'default' as Name, from: './qux.js' as RawPath},
   imports: {
-    './qux.js': {
+    ['./qux.js' as RawPath]: {
       start,
       end,
-      default: 'qux',
+      default: 'qux' as Name,
       modulePath: 'spec/qux.ts',
       resolvedDefault: {kind: 'default', modulePath: 'spec/qux.ts'},
     },
   },
   exports: {
-    baz: {start, end, kind: 'const'},
-    destructuringFoo: {start, end, kind: 'destructuring const'},
-    destructuringBar: {start, end, kind: 'destructuring const'},
+    ['baz' as Name]: {start, end, kind: 'const'},
+    ['destructuringFoo' as Name]: {start, end, kind: 'destructuring const'},
+    ['destructuringBar' as Name]: {start, end, kind: 'destructuring const'},
   },
   reexports: {
-    './qux.js': {
+    ['./qux.js' as RawPath]: {
       start,
       end,
-      default: 'default',
+      default: 'default' as Name,
       modulePath: 'spec/qux.ts',
       resolvedDefault: {kind: 'default', modulePath: 'spec/qux.ts'},
     },
   },
   sourceData,
   importedByModules: {
-    'spec/index.spec.ts': {'./baz': true},
-    'spec/foo.ts': {'./baz.js': true},
-    'spec/qux.ts': {'./baz.js': true},
+    'spec/index.spec.ts': {['./baz' as RawPath]: true},
+    'spec/foo.ts': {['./baz.js' as RawPath]: true},
+    'spec/qux.ts': {['./baz.js' as RawPath]: true},
   },
   expectedExports: {
-    baz: {'spec/foo.ts': 'both'},
-    destructuringFoo: {'spec/qux.ts': 'import'},
-    destructuringBar: {'spec/qux.ts': 'import'},
+    ['baz' as Name]: {'spec/foo.ts': 'both'},
+    ['destructuringFoo' as Name]: {'spec/qux.ts': 'import'},
+    ['destructuringBar' as Name]: {'spec/qux.ts': 'import'},
   },
   expectedDefaultExport: {'spec/foo.ts': 'both'},
-  reexportedByModules: {'spec/foo.ts': {'./baz.js': true}},
-  importedModules: {'spec/qux.ts': {'./qux.js': true}},
-  reexportedModules: {'spec/qux.ts': {'./qux.js': true}},
+  reexportedByModules: {'spec/foo.ts': {['./baz.js' as RawPath]: true}},
+  importedModules: {'spec/qux.ts': {['./qux.js' as RawPath]: true}},
+  reexportedModules: {'spec/qux.ts': {['./qux.js' as RawPath]: true}},
 };
 
 export const expectedFooModule: Module<number> = {
@@ -98,84 +105,102 @@ export const expectedFooModule: Module<number> = {
     '4': "Duplicate (namespace) reexport from `./bar.js`:\nexport * as Bar from './bar.js';",
     '5': "Duplicate named reexport from `./baz.js`:\nexport {baz as default} from './baz.js';",
   },
-  defaultExport: {start, end, by: 'baz', from: './baz.js'},
+  defaultExport: {start, end, by: 'baz' as Name, from: './baz.js' as RawPath},
   imports: {
-    'node:assert': {
+    ['node:assert' as RawPath]: {
       start,
       end,
-      default: 'defaultFromPackage',
-      namespace: {as: 'asAssert', kind: 'import'},
+      default: 'defaultFromPackage' as Name,
+      namespace: {as: 'asAssert' as Name, kind: 'import'},
       packagePath: 'node:assert',
       resolvedDefault: {kind: 'default from package', packagePath: 'node:assert'},
     },
-    'node:assert/strict': {
+    ['node:assert/strict' as RawPath]: {
       start,
       end,
       names: {
-        ok: {
-          as: 'asOk',
-          resolved: {kind: 'name from package', name: 'ok', packagePath: 'node:assert/strict'},
+        ['ok' as Name]: {
+          as: 'asOk' as Name,
+          resolved: {
+            kind: 'name from package',
+            name: 'ok' as Name,
+            packagePath: 'node:assert/strict',
+          },
         },
       },
       packagePath: 'node:assert/strict',
     },
-    './baz.js': {
+    ['./baz.js' as RawPath]: {
       start,
       end,
-      default: 'asDefault',
+      default: 'asDefault' as Name,
       names: {
-        baz: {as: 'asBaz', resolved: {kind: 'name', modulePath: 'spec/baz.ts', name: 'baz'}},
+        ['baz' as Name]: {
+          as: 'asBaz' as Name,
+          resolved: {kind: 'name', modulePath: 'spec/baz.ts', name: 'baz' as Name},
+        },
       },
-      namespace: {as: 'asAlsoDefault', kind: 'import'},
+      namespace: {as: 'asAlsoDefault' as Name, kind: 'import'},
       modulePath: 'spec/baz.ts',
       resolvedDefault: {kind: 'default', modulePath: 'spec/qux.ts'},
     },
   },
   exports: {
-    baz: {from: './bar.js', kind: 'reexport', by: 'bar'},
-    asDefault: {from: './baz.js', kind: 'reexport', by: 'default'},
-    Bar: {from: './bar.js', kind: 'reexport', namespace: true},
+    ['baz' as Name]: {from: './bar.js' as RawPath, kind: 'reexport', by: 'bar' as Name},
+    ['asDefault' as Name]: {from: './baz.js' as RawPath, kind: 'reexport', by: 'default' as Name},
+    ['Bar' as Name]: {from: './bar.js' as RawPath, kind: 'reexport', namespace: true},
   },
   reexports: {
-    './bar.js': {
+    ['./bar.js' as RawPath]: {
       start,
       end,
       names: {
-        baz: {by: 'bar', resolved: {kind: 'circular', modulePath: 'spec/foo.ts', name: 'baz'}},
+        ['baz' as Name]: {
+          by: 'bar' as Name,
+          resolved: {kind: 'circular', modulePath: 'spec/foo.ts', name: 'baz' as Name},
+        },
       },
-      namespaces: {Bar: {resolved: {kind: 'namespace', modulePath: 'spec/bar.ts'}}},
+      namespaces: {['Bar' as Name]: {resolved: {kind: 'namespace', modulePath: 'spec/bar.ts'}}},
       star: true,
       modulePath: 'spec/bar.ts',
       resolvedThroughStar: {
-        foo: {kind: 'name', modulePath: 'spec/bar.ts', name: 'foo'},
-        fs: {kind: 'namespace from package', packagePath: 'node:fs'},
-        read: {kind: 'from packages', name: 'read', packagesPaths: ['node:fs']},
+        ['foo' as Name]: {kind: 'name', modulePath: 'spec/bar.ts', name: 'foo' as Name},
+        ['fs' as Name]: {kind: 'namespace from package', packagePath: 'node:fs'},
+        ['read' as Name]: {kind: 'from packages', name: 'read' as Name, packagesPaths: ['node:fs']},
       },
     },
-    './baz.js': {
+    ['./baz.js' as RawPath]: {
       start,
       end,
-      default: 'baz',
-      names: {asDefault: {by: 'default', resolved: {kind: 'default', modulePath: 'spec/qux.ts'}}},
+      default: 'baz' as Name,
+      names: {
+        ['asDefault' as Name]: {
+          by: 'default' as Name,
+          resolved: {kind: 'default', modulePath: 'spec/qux.ts'},
+        },
+      },
       modulePath: 'spec/baz.ts',
-      resolvedDefault: {kind: 'name', modulePath: 'spec/baz.ts', name: 'baz'},
+      resolvedDefault: {kind: 'name', modulePath: 'spec/baz.ts', name: 'baz' as Name},
     },
   },
   importedPackages: {
-    'node:assert': {'node:assert': true},
-    'node:assert/strict': {'node:assert/strict': true},
+    'node:assert': {['node:assert' as RawPath]: true},
+    'node:assert/strict': {['node:assert/strict' as RawPath]: true},
   },
   sourceData,
-  importedByModules: {'spec/index.spec.ts': {'./foo.js': true}},
+  importedByModules: {'spec/index.spec.ts': {['./foo.js' as RawPath]: true}},
   expectedExports: {
-    Bar: {'spec/index.spec.ts': 'import'},
-    baz: {'spec/index.spec.ts': 'import', 'spec/bar.ts': 'reexport'},
-    foo: {'spec/index.spec.ts': 'import'},
-    fs: {'spec/index.spec.ts': 'import'},
-    read: {'spec/index.spec.ts': 'import'},
+    ['Bar' as Name]: {'spec/index.spec.ts': 'import'},
+    ['baz' as Name]: {'spec/index.spec.ts': 'import', 'spec/bar.ts': 'reexport'},
+    ['foo' as Name]: {'spec/index.spec.ts': 'import'},
+    ['fs' as Name]: {'spec/index.spec.ts': 'import'},
+    ['read' as Name]: {'spec/index.spec.ts': 'import'},
   },
   expectedDefaultExport: {'spec/index.spec.ts': 'import'},
-  importedModules: {'spec/baz.ts': {'./baz.js': true}},
-  reexportedModules: {'spec/baz.ts': {'./baz.js': true}, 'spec/bar.ts': {'./bar.js': true}},
-  reexportedByModules: {'spec/bar.ts': {'./foo.js': true}},
+  importedModules: {'spec/baz.ts': {['./baz.js' as RawPath]: true}},
+  reexportedModules: {
+    'spec/baz.ts': {['./baz.js' as RawPath]: true},
+    'spec/bar.ts': {['./bar.js' as RawPath]: true},
+  },
+  reexportedByModules: {'spec/bar.ts': {['./foo.js' as RawPath]: true}},
 };

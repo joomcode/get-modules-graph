@@ -1,6 +1,15 @@
 import {addError, addWarning, RESERVED_WORDS} from './utils.js';
 
-import type {Export, Import, ImportsExports, Module, Name, RawPath, Reexport} from './types';
+import type {
+  ExcludeUndefined,
+  Export,
+  Import,
+  ImportsExports,
+  Module,
+  Name,
+  RawPath,
+  Reexport,
+} from './types';
 
 /**
  * Merge imports, exports and reexports of module to base module object.
@@ -30,11 +39,11 @@ export const mergeImportsExports = (
   const moduleNames = {__proto__: null} as unknown as Record<Name, true>;
 
   for (const rawPath in namedImports) {
-    const rawImports = namedImports[rawPath]!;
-    const importedNames = {__proto__: null} as unknown as Exclude<Import['names'], undefined>;
+    const rawImports = namedImports[rawPath as RawPath]!;
+    const importedNames = {__proto__: null} as unknown as ExcludeUndefined<Import['names']>;
     const importObject: Import = {start: rawImports[0]!.start, end: rawImports[0]!.end};
 
-    imports[rawPath] = importObject;
+    imports[rawPath as RawPath] = importObject;
 
     for (const rawImport of rawImports) {
       if (rawImport !== rawImports[0]) {
@@ -84,7 +93,7 @@ export const mergeImportsExports = (
       }
 
       for (const name in names) {
-        const {by = name} = names[name]!;
+        const {by = name as Name} = names[name as Name]!;
 
         if (name in moduleNames) {
           addError(
@@ -103,7 +112,7 @@ export const mergeImportsExports = (
             source,
           );
         } else {
-          moduleNames[name] = true;
+          moduleNames[name as Name] = true;
         }
 
         if (by === 'default') {
@@ -116,7 +125,7 @@ export const mergeImportsExports = (
               source,
             );
           } else {
-            importObject.default = name;
+            importObject.default = name as Name;
           }
         } else if (by in importedNames) {
           addWarning(
@@ -130,7 +139,7 @@ export const mergeImportsExports = (
           importedNames[by] = {};
 
           if (by !== name) {
-            importedNames[by]!.as = name;
+            importedNames[by]!.as = name as Name;
           }
         }
       }
@@ -142,10 +151,10 @@ export const mergeImportsExports = (
   }
 
   for (const rawPath in namespaceImports) {
-    const rawImports = namespaceImports[rawPath]!;
+    const rawImports = namespaceImports[rawPath as RawPath]!;
     const importObject: Import =
       rawPath in imports
-        ? imports[rawPath]!
+        ? imports[rawPath as RawPath]!
         : {start: rawImports[0]!.start, end: rawImports[0]!.end};
 
     for (const rawImport of rawImports) {
@@ -231,15 +240,15 @@ export const mergeImportsExports = (
     }
 
     if (!(rawPath in imports)) {
-      imports[rawPath] = importObject;
+      imports[rawPath as RawPath] = importObject;
     }
   }
 
   for (const rawPath in dynamicImports) {
-    const rawImports = dynamicImports[rawPath]!;
+    const rawImports = dynamicImports[rawPath as RawPath]!;
     const importObject: Import =
       rawPath in imports
-        ? imports[rawPath]!
+        ? imports[rawPath as RawPath]!
         : {start: rawImports[0]!.start, end: rawImports[0]!.end};
 
     for (const rawImport of rawImports) {
@@ -267,15 +276,15 @@ export const mergeImportsExports = (
     }
 
     if (!(rawPath in imports)) {
-      imports[rawPath] = importObject;
+      imports[rawPath as RawPath] = importObject;
     }
   }
 
   for (const rawPath in requires) {
-    const rawImports = requires[rawPath]!;
+    const rawImports = requires[rawPath as RawPath]!;
     const importObject: Import =
       rawPath in imports
-        ? imports[rawPath]!
+        ? imports[rawPath as RawPath]!
         : {start: rawImports[0]!.start, end: rawImports[0]!.end};
 
     for (const rawImport of rawImports) {
@@ -303,14 +312,14 @@ export const mergeImportsExports = (
     }
 
     if (!(rawPath in imports)) {
-      imports[rawPath] = importObject;
+      imports[rawPath as RawPath] = importObject;
     }
   }
 
   const exports = {__proto__: null} as unknown as Record<Name, Export>;
 
   for (const name in declarationExports) {
-    const declarationExport = declarationExports[name]!;
+    const declarationExport = declarationExports[name as Name]!;
 
     if (declarationExport.kind.startsWith('declare')) {
       continue;
@@ -333,10 +342,10 @@ export const mergeImportsExports = (
         source,
       );
     } else {
-      moduleNames[name] = true;
+      moduleNames[name as Name] = true;
     }
 
-    exports[name] = declarationExport as (typeof exports)[string];
+    exports[name as Name] = declarationExport as (typeof exports)[Name];
   }
 
   for (const namedExport of namedExports || []) {
@@ -345,7 +354,7 @@ export const mergeImportsExports = (
         if (module.defaultExport !== undefined) {
           addError(
             module,
-            `Duplicate default export by \`${namedExport.names[name]?.by}\` in named export`,
+            `Duplicate default export by \`${namedExport.names[name as Name]?.by}\` in named export`,
             namedExport.start,
             namedExport.end,
             source,
@@ -354,7 +363,7 @@ export const mergeImportsExports = (
           module.defaultExport = {
             start: namedExport.start,
             end: namedExport.end,
-            by: namedExport.names[name]?.by!,
+            by: namedExport.names[name as Name]?.by!,
           };
         }
       } else if (name in exports) {
@@ -366,11 +375,11 @@ export const mergeImportsExports = (
           source,
         );
       } else {
-        exports[name] = {
+        exports[name as Name] = {
           start: namedExport.start,
           end: namedExport.end,
           kind: 'name',
-          ...namedExport.names[name],
+          ...namedExport.names[name as Name],
         };
       }
     }
@@ -380,11 +389,11 @@ export const mergeImportsExports = (
 
   for (const rawPath in namedReexports) {
     const byNames = {__proto__: null} as unknown as Record<Name, true>;
-    const rawReexports = namedReexports[rawPath]!;
-    const reexportedNames = {__proto__: null} as unknown as Exclude<Reexport['names'], undefined>;
+    const rawReexports = namedReexports[rawPath as RawPath]!;
+    const reexportedNames = {__proto__: null} as unknown as ExcludeUndefined<Reexport['names']>;
     const reexportObject: Reexport = {start: rawReexports[0]!.start, end: rawReexports[0]!.end};
 
-    reexports[rawPath] = reexportObject;
+    reexports[rawPath as RawPath] = reexportObject;
 
     for (const rawReexport of rawReexports) {
       if (rawReexport !== rawReexports[0]) {
@@ -411,11 +420,11 @@ export const mergeImportsExports = (
         }
 
         const exportObject: Export = {
-          from: rawPath,
+          from: rawPath as RawPath,
           kind: 'reexport',
-          ...rawReexport.names[name],
+          ...rawReexport.names[name as Name],
         } as const;
-        const {by = name} = exportObject;
+        const {by = name as Name} = exportObject;
 
         if (name === 'default') {
           if (module.defaultExport !== undefined) {
@@ -431,16 +440,16 @@ export const mergeImportsExports = (
               start: rawReexport.start,
               end: rawReexport.end,
               by,
-              from: rawPath,
+              from: rawPath as RawPath,
             };
             reexportObject.default = by;
           }
         } else {
-          exports[name] = exportObject;
-          reexportedNames[name] = {};
+          exports[name as Name] = exportObject;
+          reexportedNames[name as Name] = {};
 
           if (by !== name) {
-            reexportedNames[name]!.by = by;
+            reexportedNames[name as Name]!.by = by;
           }
         }
 
@@ -464,10 +473,10 @@ export const mergeImportsExports = (
   }
 
   for (const rawPath in namespaceReexports) {
-    const rawReexports = namespaceReexports[rawPath]!;
+    const rawReexports = namespaceReexports[rawPath as RawPath]!;
     const reexportObject: Reexport =
       rawPath in reexports
-        ? reexports[rawPath]!
+        ? reexports[rawPath as RawPath]!
         : {start: rawReexports[0]!.start, end: rawReexports[0]!.end};
 
     for (const {end, namespace, start} of rawReexports) {
@@ -503,33 +512,30 @@ export const mergeImportsExports = (
             source,
           );
         } else {
-          module.defaultExport = {start, end, from: rawPath, namespace: true};
-          reexportObject.default = '*';
+          module.defaultExport = {start, end, from: rawPath as RawPath, namespace: true};
+          reexportObject.default = '*' as Name;
         }
       } else {
-        exports[namespace] = {from: rawPath, kind: 'reexport', namespace: true};
+        exports[namespace] = {from: rawPath as RawPath, kind: 'reexport', namespace: true};
 
-        if (reexportObject.namespaces === undefined) {
-          reexportObject.namespaces = {__proto__: null} as Exclude<
-            typeof reexportObject.namespaces,
-            undefined
-          >;
-        }
+        reexportObject.namespaces ??= {__proto__: null} as ExcludeUndefined<
+          typeof reexportObject.namespaces
+        >;
 
         reexportObject.namespaces[namespace] = {};
       }
     }
 
     if (!(rawPath in reexports)) {
-      reexports[rawPath] = reexportObject;
+      reexports[rawPath as RawPath] = reexportObject;
     }
   }
 
   for (const rawPath in starReexports) {
-    const rawReexports = starReexports[rawPath]!;
+    const rawReexports = starReexports[rawPath as RawPath]!;
     const reexportObject: Reexport =
       rawPath in reexports
-        ? reexports[rawPath]!
+        ? reexports[rawPath as RawPath]!
         : {start: rawReexports[0]!.start, end: rawReexports[0]!.end};
 
     reexportObject.star = true;
@@ -541,7 +547,7 @@ export const mergeImportsExports = (
     }
 
     if (!(rawPath in reexports)) {
-      reexports[rawPath] = reexportObject;
+      reexports[rawPath as RawPath] = reexportObject;
     }
   }
 

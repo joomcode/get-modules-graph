@@ -2,7 +2,13 @@ import 'node:fs';
 import {createRequire} from 'node:module';
 import {dirname, join, sep} from 'node:path';
 
-import {getModulesGraph, resolveImports, resolveReexports} from '../src/index.js';
+import {
+  getModulesGraph,
+  type Name,
+  type RawPath,
+  resolveImports,
+  resolveReexports,
+} from '../src/index.js';
 
 import {expectedBarModule, expectedBazModule, expectedFooModule} from './expected.js';
 import foo, {Bar, baz, foo as asFoo, fs, read as asRead} from './foo.js';
@@ -169,7 +175,7 @@ visitModules: for (const modulePath in modules) {
 
   if (module.expectedExports && Object.keys(module.expectedExports).length > 0) {
     for (const rawPath in module.reexports) {
-      if (module.reexports[rawPath]!.star) {
+      if (module.reexports[rawPath as RawPath]!.star) {
         continue visitModules;
       }
     }
@@ -209,10 +215,10 @@ for (const module of [indexSpecModule, fooModule, barModule, bazModule, processM
   resolveReexports(modulesGraph, module);
 
   for (const rawPath in module.imports) {
-    const importObject = module.imports[rawPath]!;
+    const importObject = module.imports[rawPath as RawPath]!;
 
     for (const name in importObject.names) {
-      const nameObject = importObject.names[name]!;
+      const nameObject = importObject.names[name as Name]!;
 
       if (typeof nameObject.resolved !== 'object') {
         assert(false, '`resolveImports` resolves all imports');
@@ -221,10 +227,10 @@ for (const module of [indexSpecModule, fooModule, barModule, bazModule, processM
   }
 
   for (const rawPath in module.reexports) {
-    const reexportObject = module.reexports[rawPath]!;
+    const reexportObject = module.reexports[rawPath as RawPath]!;
 
     for (const name in reexportObject.names) {
-      const nameObject = reexportObject.names[name]!;
+      const nameObject = reexportObject.names[name as Name]!;
 
       if (typeof nameObject.resolved !== 'object') {
         assert(false, '`resolveReexports` resolves all reexports');
@@ -234,22 +240,28 @@ for (const module of [indexSpecModule, fooModule, barModule, bazModule, processM
 }
 
 const {defaultExport} = indexSpecModule;
-const {namespace: dynamicImportNamespace} = indexSpecModule.imports!['./baz']!;
-const {namespace: requireNamespace} = indexSpecModule.imports!['./qux.cjs']!;
-const {resolved: resolvedBar} = indexSpecModule.imports!['./foo.js']!.names!['Bar']!;
-const {resolved: resolvedFoo} = indexSpecModule.imports!['./foo.js']!.names!['foo']!;
-const {resolved: resolvedFs} = indexSpecModule.imports!['./foo.js']!.names!['fs']!;
+const {namespace: dynamicImportNamespace} = indexSpecModule.imports!['./baz' as RawPath]!;
+const {namespace: requireNamespace} = indexSpecModule.imports!['./qux.cjs' as RawPath]!;
+const {resolved: resolvedBar} =
+  indexSpecModule.imports!['./foo.js' as RawPath]!.names!['Bar' as Name]!;
+const {resolved: resolvedFoo} =
+  indexSpecModule.imports!['./foo.js' as RawPath]!.names!['foo' as Name]!;
+const {resolved: resolvedFs} =
+  indexSpecModule.imports!['./foo.js' as RawPath]!.names!['fs' as Name]!;
 const {resolved: resolvedImports} =
-  indexSpecModule.imports!['../src/index.js']!.names!['resolveImports']!;
-const {resolved: resolvedJoin} = indexSpecModule.reexports!['node:path']!.names!['join']!;
+  indexSpecModule.imports!['../src/index.js' as RawPath]!.names!['resolveImports' as Name]!;
+const {resolved: resolvedJoin} =
+  indexSpecModule.reexports!['node:path' as RawPath]!.names!['join' as Name]!;
 const {resolved: resolvedParseImportsExports} =
-  processModule.imports!['./utils.js']!.names!['parseImportsExports']!;
-const {resolved: resolvedRead} = indexSpecModule.imports!['./foo.js']!.names!['read']!;
+  processModule.imports!['./utils.js' as RawPath]!.names!['parseImportsExports' as Name]!;
+const {resolved: resolvedRead} =
+  indexSpecModule.imports!['./foo.js' as RawPath]!.names!['read' as Name]!;
 const {resolved: resolvedReexports} =
-  indexSpecModule.reexports!['../src/index.js']!.names!['asResolveReexports']!;
+  indexSpecModule.reexports!['../src/index.js' as RawPath]!.names!['asResolveReexports' as Name]!;
 const {resolved: resolvedPackageNamespace} =
-  indexSpecModule.reexports!['node:buffer']!.namespaces!['foo']!;
-const {resolvedDefault: resolvedPackageDefault} = indexSpecModule.reexports!['node:buffer']!;
+  indexSpecModule.reexports!['node:buffer' as RawPath]!.namespaces!['foo' as Name]!;
+const {resolvedDefault: resolvedPackageDefault} =
+  indexSpecModule.reexports!['node:buffer' as RawPath]!;
 
 assert(
   defaultExport !== undefined &&
