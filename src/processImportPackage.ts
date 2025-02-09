@@ -67,7 +67,7 @@ export const processImportPackage = (
         addWarning(
           module,
           `Duplicate import of \`${name}\` from \`${rawPath}\` (resolved as package \`${packagePath}\`)`,
-          importObject.start,
+          importObject,
         );
       }
     } else {
@@ -89,7 +89,7 @@ export const processImportPackage = (
         addWarning(
           module,
           `Duplicate default import \`${importObject.default}\` from \`${rawPath}\` (resolved as package \`${packagePath}\`)`,
-          importObject.start,
+          importObject,
         );
       }
     } else {

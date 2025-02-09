@@ -13,6 +13,7 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
   chooseIndexModule,
   chooseModule,
   includeDynamicImports,
+  includeLineColumn,
   includeRequires,
   modules: initialModules,
   onAddDependencies,
@@ -37,6 +38,10 @@ export const getModulesGraph = <SourceData = void, DependenciesData = void>({
 
   if (includeDynamicImports === false) {
     parseOptions.ignoreDynamicImports = true;
+  }
+
+  if (includeLineColumn) {
+    parseOptions.includeLineColumn = true;
   }
 
   if (includeRequires === false) {

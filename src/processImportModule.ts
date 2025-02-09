@@ -92,7 +92,7 @@ export const processImportModule = async (
         addWarning(
           module,
           `Duplicate import of \`${name}\` from \`${rawPath}\` (resolved as module \`${importedModule.path}\`)`,
-          importObject.start,
+          importObject,
         );
       }
     } else {
@@ -118,7 +118,7 @@ export const processImportModule = async (
         addWarning(
           module,
           `Duplicate default import \`${importObject.default}\` from \`${rawPath}\` (resolved as module \`${importedModule.path}\`)`,
-          importObject.start,
+          importObject,
         );
       }
     } else {

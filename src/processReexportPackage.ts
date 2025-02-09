@@ -70,7 +70,7 @@ export const processReexportPackage = (
         addWarning(
           module,
           `Duplicate reexport of \`${by}\` from \`${rawPath}\` (resolved as package \`${packagePath}\`)`,
-          reexportObject.start,
+          reexportObject,
         );
       }
     } else {
@@ -92,7 +92,7 @@ export const processReexportPackage = (
         addWarning(
           module,
           `Duplicate default reexport \`${reexportObject.default}\` from \`${rawPath}\` (resolved as package \`${packagePath}\`)`,
-          reexportObject.start,
+          reexportObject,
         );
       }
     } else {

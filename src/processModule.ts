@@ -41,7 +41,7 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
   });
 
   const originalSource: Source = await readFile(modulePath, READ_FILE_OPTIONS).catch((error) => {
-    addError(module, `Cannot read module by path \`${modulePath}\`: ${error}`, 0);
+    addError(module, `Cannot read module by path \`${modulePath}\`: ${error}`);
 
     return '';
   });

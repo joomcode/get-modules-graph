@@ -2,7 +2,7 @@ export * from 'node:fs';
 
 export * as fs from 'node:fs';
 
-export * from './foo.js';
+export * from './foo.js' with {};
 
 export const foo = 3;
 

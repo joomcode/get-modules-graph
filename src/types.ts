@@ -4,9 +4,11 @@ import type {ParsedPath} from 'node:path';
 import type {
   ImportsExports,
   Kind as DeclarationExportKind,
+  LineColumn,
   Name,
   Options as ParseOptions,
   Path as RawPath,
+  Position,
 } from 'parse-imports-exports';
 
 /**
@@ -79,7 +81,7 @@ export type Import = Position & {
   resolvedDefault?: ResolvedImport;
 };
 
-export type {ImportsExports, ParseOptions};
+export type {ImportsExports, LineColumn, ParseOptions, Position};
 
 /**
  * Merged imports, exports and reexports of module.
@@ -95,19 +97,19 @@ export type MergedImportsExports = {
  * Processed module (with optional dependencies).
  */
 export type Module<SourceData = unknown, DependenciesData = unknown> = {
-  errors?: Record<number, string>;
+  errors?: Record<string, string>;
   expectedDefaultExport?: Record<ModulePath, ExpectedExportKind>;
   expectedExports?: Record<Name, Record<ModulePath, ExpectedExportKind>>;
   importedByModules?: Record<ModulePath, Record<RawPath, true>>;
   importedModules?: Record<ModulePath, Record<RawPath, true>>;
   importedPackages?: Record<PackagePath, Record<RawPath, true>>;
   path: ModulePath;
-  parseErrors?: Record<number, string>;
+  parseErrors?: Record<LineColumn, string>;
   reexportedByModules?: Record<ModulePath, Record<RawPath, true>>;
   reexportedModules?: Record<ModulePath, Record<RawPath, true>>;
   reexportedPackages?: Record<PackagePath, Record<RawPath, true>>;
   uncompletedDependenciesCount: number;
-  warnings?: Record<number, string>;
+  warnings?: Record<string, string>;
 } & MergedImportsExports &
   (IsEqual<DependenciesData, unknown> extends true ? {} : {dependenciesData: DependenciesData}) &
   (IsEqual<SourceData, unknown> extends true ? {} : {sourceData: SourceData});
@@ -153,6 +155,7 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
     directoryPath: DirectoryPath,
     directoryContent: DeepReadonly<DirectoryContent>,
   ) => string;
+
   /**
    * Chooses a module (or directory) in a directory by the resolved path
    * to a module in that directory.
@@ -165,25 +168,37 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
     parsedPath: ParsedPath,
     directoryContent: DeepReadonly<DirectoryContent>,
   ) => string;
+
   /**
    * List of relative paths to directories for recursive traversal in depth
    * and by their dependencies.
    */
   directories: readonly string[];
+
   /**
    * If `true`, then `import(...)` expression with static strings will be taken into account
    * (as importing the namespace of the entire module).
    */
   includeDynamicImports: boolean;
+
+  /**
+   * If `true`, then include the token's start line-column and the token's end line-column
+   * in the token's position. Otherwise the position includes only
+   * the token's start index and the token end index.
+   */
+  includeLineColumn: boolean;
+
   /**
    * If `true`, then `require(...)` expression with static strings will be taken into account
    * (as importing the namespace of the entire module).
    */
   includeRequires: boolean;
+
   /**
    * List of relative paths to modules for recursive traversal by their dependencies.
    */
   modules: readonly string[];
+
   /**
    * The callback on completing (adding) dependencies to a module.
    * Called when all module dependencies have been recursively completed.
@@ -195,6 +210,7 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
     this: void,
     module: DeepReadonly<Module<SourceData>>,
   ) => DependenciesData | Promise<DependenciesData>;
+
   /**
    * The callback on adding a module. Called as soon as the module has been parsed
    * and added to the module graph (without its own dependencies).
@@ -207,6 +223,7 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
     transformedSource: Source,
     originalSource: Source,
   ) => SourceData | Promise<SourceData>;
+
   /**
    * Resolves raw path to dependency module (after the `from` keyword) to relative path
    * from current working directory or to bare path to the package.
@@ -216,19 +233,23 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
    * If returns `undefined`, dependency module is skipped.
    */
   resolvePath: (this: void, modulePath: ModulePath, rawPath: RawPath) => ResolvedPath | undefined;
+
   /**
    * If `true`, then we respect string literals when parsing, that is,
    * we ignore the expressions inside them (but parsing will be a little slower).
    */
   respectStringLiterals: boolean;
+
   /**
    * If returns `true`, directory is skipped in recursive directories traversal.
    */
   skipDirectory: (this: void, directoryPath: DirectoryPath, directoryName: string) => boolean;
+
   /**
    * If returns `true`, module is skipped in recursive directories traversal.
    */
   skipModule: (this: void, modulePath: ModulePath, moduleName: string) => boolean;
+
   /**
    * Transforms source of module.
    */
@@ -324,8 +345,3 @@ type IsEqual<X, Y> =
  * Mutable packages object for internal functions.
  */
 type Packages = Record<PackagePath, Package>;
-
-/**
- * Position of import, export or reexport statement in source of module.
- */
-type Position = {start: number; end: number};

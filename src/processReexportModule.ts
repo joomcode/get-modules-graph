@@ -95,7 +95,7 @@ export const processReexportModule = async (
           addWarning(
             module,
             `Duplicate default reexport (as \`${name}\`) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
-            reexportObject.start,
+            reexportObject,
           );
         }
       } else {
@@ -122,7 +122,7 @@ export const processReexportModule = async (
         addWarning(
           module,
           `Duplicate reexport of \`${by}\` (as \`${name}\`) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
-          reexportObject.start,
+          reexportObject,
         );
       }
     } else {
@@ -148,7 +148,7 @@ export const processReexportModule = async (
         addWarning(
           module,
           `Duplicate default reexport (as default) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
-          reexportObject.start,
+          reexportObject,
         );
       }
     } else {
@@ -174,7 +174,7 @@ export const processReexportModule = async (
         addWarning(
           module,
           `Duplicate reexport of \`${by}\` (as default) from \`${rawPath}\` (resolved as module \`${reexportedModule.path}\`)`,
-          reexportObject.start,
+          reexportObject,
         );
       }
     } else {

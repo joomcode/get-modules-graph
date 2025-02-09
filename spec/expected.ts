@@ -9,8 +9,8 @@ export const expectedBarModule: Module<number> = {
   path: 'spec/bar.ts',
   uncompletedDependenciesCount,
   warnings: {
-    '0': "Duplicate (star) reexport from `node:fs`:\nexport * from 'node:fs';",
-    '1': "Duplicate (star) reexport from `./foo.js`:\nexport * from './foo.js';",
+    '1': "Duplicate (star) reexport from `./foo.js`:\nexport * from './foo.js' with {",
+    '0:0': "Duplicate (star) reexport from `node:fs`:\nexport * from 'node:fs';",
   },
   exports: {
     ['foo' as Name]: {start, end, kind: 'const'},

@@ -41,19 +41,19 @@ export const mergeImportsExports = (
   for (const rawPath in namedImports) {
     const rawImports = namedImports[rawPath as RawPath]!;
     const importedNames = {__proto__: null} as unknown as ExcludeUndefined<Import['names']>;
-    const importObject: Import = {start: rawImports[0]!.start, end: rawImports[0]!.end};
+    const firstRawImport = rawImports[0];
+    const importObject: Import = {start: firstRawImport.start, end: firstRawImport.end};
+
+    if (firstRawImport.startLineColumn !== undefined) {
+      importObject.startLineColumn = firstRawImport.startLineColumn;
+      importObject.endLineColumn = firstRawImport.endLineColumn!;
+    }
 
     imports[rawPath as RawPath] = importObject;
 
     for (const rawImport of rawImports) {
       if (rawImport !== rawImports[0]) {
-        addWarning(
-          module,
-          `Duplicate named import from \`${rawPath}\``,
-          rawImport.start,
-          rawImport.end,
-          source,
-        );
+        addWarning(module, `Duplicate named import from \`${rawPath}\``, rawImport, source);
       }
 
       const {default: defaultImport, names} = rawImport;
@@ -63,8 +63,7 @@ export const mergeImportsExports = (
           addWarning(
             module,
             `Duplicate default import \`${defaultImport}\` from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -75,16 +74,14 @@ export const mergeImportsExports = (
           addError(
             module,
             `Duplicate name \`${defaultImport}\` as default import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else if (defaultImport in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${defaultImport}\` cannot be an identifier as default import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -99,16 +96,14 @@ export const mergeImportsExports = (
           addError(
             module,
             `Duplicate name \`${name}\` as named import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else if (name in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${name}\` cannot be an identifier as named import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -120,8 +115,7 @@ export const mergeImportsExports = (
             addWarning(
               module,
               `Duplicate default import (as \`${name}\`) from \`${rawPath}\``,
-              rawImport.start,
-              rawImport.end,
+              rawImport,
               source,
             );
           } else {
@@ -131,8 +125,7 @@ export const mergeImportsExports = (
           addWarning(
             module,
             `Duplicate imported name \`${by}\` from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -152,20 +145,23 @@ export const mergeImportsExports = (
 
   for (const rawPath in namespaceImports) {
     const rawImports = namespaceImports[rawPath as RawPath]!;
+    const firstRawImport = rawImports[0];
     const importObject: Import =
       rawPath in imports
         ? imports[rawPath as RawPath]!
-        : {start: rawImports[0]!.start, end: rawImports[0]!.end};
+        : {start: firstRawImport.start, end: firstRawImport.end};
+
+    if (
+      firstRawImport.startLineColumn !== undefined &&
+      importObject.startLineColumn === undefined
+    ) {
+      importObject.startLineColumn = firstRawImport.startLineColumn;
+      importObject.endLineColumn = firstRawImport.endLineColumn!;
+    }
 
     for (const rawImport of rawImports) {
       if (rawPath in imports) {
-        addWarning(
-          module,
-          `Duplicate (namespace) import from \`${rawPath}\``,
-          rawImport.start,
-          rawImport.end,
-          source,
-        );
+        addWarning(module, `Duplicate (namespace) import from \`${rawPath}\``, rawImport, source);
       }
 
       const {default: defaultImport, namespace} = rawImport;
@@ -175,8 +171,7 @@ export const mergeImportsExports = (
           addWarning(
             module,
             `Duplicate default import \`${defaultImport}\` from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -187,16 +182,14 @@ export const mergeImportsExports = (
           addError(
             module,
             `Duplicate name \`${defaultImport}\` as default import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else if (defaultImport in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${defaultImport}\` cannot be an identifier as default import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -209,8 +202,7 @@ export const mergeImportsExports = (
           addWarning(
             module,
             `Duplicate namespace import \`${namespace}\` from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -221,16 +213,14 @@ export const mergeImportsExports = (
           addError(
             module,
             `Duplicate name \`${namespace}\` as namespace import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else if (namespace in RESERVED_WORDS) {
           addError(
             module,
             `Reserved word \`${namespace}\` cannot be an identifier as namespace import from \`${rawPath}\``,
-            rawImport.start,
-            rawImport.end,
+            rawImport,
             source,
           );
         } else {
@@ -246,30 +236,27 @@ export const mergeImportsExports = (
 
   for (const rawPath in dynamicImports) {
     const rawImports = dynamicImports[rawPath as RawPath]!;
+    const firstRawImport = rawImports[0];
     const importObject: Import =
       rawPath in imports
         ? imports[rawPath as RawPath]!
-        : {start: rawImports[0]!.start, end: rawImports[0]!.end};
+        : {start: firstRawImport.start, end: firstRawImport.end};
+
+    if (
+      firstRawImport.startLineColumn !== undefined &&
+      importObject.startLineColumn === undefined
+    ) {
+      importObject.startLineColumn = firstRawImport.startLineColumn;
+      importObject.endLineColumn = firstRawImport.endLineColumn!;
+    }
 
     for (const rawImport of rawImports) {
       if (rawPath in imports) {
-        addWarning(
-          module,
-          `Duplicate (dynamic) import from \`${rawPath}\``,
-          rawImport.start,
-          rawImport.end,
-          source,
-        );
+        addWarning(module, `Duplicate (dynamic) import from \`${rawPath}\``, rawImport, source);
       }
 
       if (importObject.namespace !== undefined) {
-        addWarning(
-          module,
-          `Duplicate dynamic import from \`${rawPath}\``,
-          rawImport.start,
-          rawImport.end,
-          source,
-        );
+        addWarning(module, `Duplicate dynamic import from \`${rawPath}\``, rawImport, source);
       } else {
         importObject.namespace = {kind: 'dynamic import'};
       }
@@ -282,30 +269,27 @@ export const mergeImportsExports = (
 
   for (const rawPath in requires) {
     const rawImports = requires[rawPath as RawPath]!;
+    const firstRawImport = rawImports[0];
     const importObject: Import =
       rawPath in imports
         ? imports[rawPath as RawPath]!
-        : {start: rawImports[0]!.start, end: rawImports[0]!.end};
+        : {start: firstRawImport.start, end: firstRawImport.end};
+
+    if (
+      firstRawImport.startLineColumn !== undefined &&
+      importObject.startLineColumn === undefined
+    ) {
+      importObject.startLineColumn = firstRawImport.startLineColumn;
+      importObject.endLineColumn = firstRawImport.endLineColumn!;
+    }
 
     for (const rawImport of rawImports) {
       if (rawPath in imports) {
-        addWarning(
-          module,
-          `Duplicate (require) import from \`${rawPath}\``,
-          rawImport.start,
-          rawImport.end,
-          source,
-        );
+        addWarning(module, `Duplicate (require) import from \`${rawPath}\``, rawImport, source);
       }
 
       if (importObject.namespace !== undefined) {
-        addWarning(
-          module,
-          `Duplicate require from \`${rawPath}\``,
-          rawImport.start,
-          rawImport.end,
-          source,
-        );
+        addWarning(module, `Duplicate require from \`${rawPath}\``, rawImport, source);
       } else {
         importObject.namespace = {kind: 'require'};
       }
@@ -329,16 +313,14 @@ export const mergeImportsExports = (
       addError(
         module,
         `Duplicate name \`${name}\` as \`${declarationExport.kind}\` declaration export`,
-        declarationExport.start,
-        declarationExport.end,
+        declarationExport,
         source,
       );
     } else if (name in RESERVED_WORDS) {
       addError(
         module,
         `Reserved word \`${name}\` cannot be an identifier as \`${declarationExport.kind}\` declaration export`,
-        declarationExport.start,
-        declarationExport.end,
+        declarationExport,
         source,
       );
     } else {
@@ -355,8 +337,7 @@ export const mergeImportsExports = (
           addError(
             module,
             `Duplicate default export by \`${namedExport.names[name as Name]?.by}\` in named export`,
-            namedExport.start,
-            namedExport.end,
+            namedExport,
             source,
           );
         } else {
@@ -364,14 +345,19 @@ export const mergeImportsExports = (
             start: namedExport.start,
             end: namedExport.end,
             by: namedExport.names[name as Name]?.by!,
+            ...(namedExport.startLineColumn !== undefined
+              ? {
+                  startLineColumn: namedExport.startLineColumn,
+                  endLineColumn: namedExport.endLineColumn,
+                }
+              : undefined),
           };
         }
       } else if (name in exports) {
         addError(
           module,
           `Duplicate exported name \`${name}\` in named export`,
-          namedExport.start,
-          namedExport.end,
+          namedExport,
           source,
         );
       } else {
@@ -380,6 +366,12 @@ export const mergeImportsExports = (
           end: namedExport.end,
           kind: 'name',
           ...namedExport.names[name as Name],
+          ...(namedExport.startLineColumn !== undefined
+            ? {
+                startLineColumn: namedExport.startLineColumn,
+                endLineColumn: namedExport.endLineColumn,
+              }
+            : undefined),
         };
       }
     }
@@ -391,19 +383,19 @@ export const mergeImportsExports = (
     const byNames = {__proto__: null} as unknown as Record<Name, true>;
     const rawReexports = namedReexports[rawPath as RawPath]!;
     const reexportedNames = {__proto__: null} as unknown as ExcludeUndefined<Reexport['names']>;
-    const reexportObject: Reexport = {start: rawReexports[0]!.start, end: rawReexports[0]!.end};
+    const firstRawReexport = rawReexports[0];
+    const reexportObject: Reexport = {start: firstRawReexport.start, end: firstRawReexport.end};
+
+    if (firstRawReexport.startLineColumn !== undefined) {
+      reexportObject.startLineColumn = firstRawReexport.startLineColumn;
+      reexportObject.endLineColumn = firstRawReexport.endLineColumn!;
+    }
 
     reexports[rawPath as RawPath] = reexportObject;
 
     for (const rawReexport of rawReexports) {
       if (rawReexport !== rawReexports[0]) {
-        addWarning(
-          module,
-          `Duplicate named reexport from \`${rawPath}\``,
-          rawReexport.start,
-          rawReexport.end,
-          source,
-        );
+        addWarning(module, `Duplicate named reexport from \`${rawPath}\``, rawReexport, source);
       }
 
       for (const name in rawReexport.names) {
@@ -411,8 +403,7 @@ export const mergeImportsExports = (
           addError(
             module,
             `Duplicate exported name \`${name}\` in reexport from \`${rawPath}\``,
-            rawReexport.start,
-            rawReexport.end,
+            rawReexport,
             source,
           );
 
@@ -431,8 +422,7 @@ export const mergeImportsExports = (
             addError(
               module,
               `Duplicate default export by \`${by}\` in reexport from \`${rawPath}\``,
-              rawReexport.start,
-              rawReexport.end,
+              rawReexport,
               source,
             );
           } else {
@@ -441,6 +431,12 @@ export const mergeImportsExports = (
               end: rawReexport.end,
               by,
               from: rawPath as RawPath,
+              ...(rawReexport.startLineColumn !== undefined
+                ? {
+                    startLineColumn: rawReexport.startLineColumn,
+                    endLineColumn: rawReexport.endLineColumn,
+                  }
+                : undefined),
             };
             reexportObject.default = by;
           }
@@ -457,8 +453,7 @@ export const mergeImportsExports = (
           addWarning(
             module,
             `Duplicate reexported name \`${by}\` (as \`${name}\`) from \`${rawPath}\``,
-            rawReexport.start,
-            rawReexport.end,
+            rawReexport,
             source,
           );
         } else {
@@ -474,18 +469,28 @@ export const mergeImportsExports = (
 
   for (const rawPath in namespaceReexports) {
     const rawReexports = namespaceReexports[rawPath as RawPath]!;
+    const firstRawReexport = rawReexports[0];
     const reexportObject: Reexport =
       rawPath in reexports
         ? reexports[rawPath as RawPath]!
-        : {start: rawReexports[0]!.start, end: rawReexports[0]!.end};
+        : {start: firstRawReexport.start, end: firstRawReexport.end};
 
-    for (const {end, namespace, start} of rawReexports) {
+    if (
+      firstRawReexport.startLineColumn !== undefined &&
+      reexportObject.startLineColumn === undefined
+    ) {
+      reexportObject.startLineColumn = firstRawReexport.startLineColumn;
+      reexportObject.endLineColumn = firstRawReexport.endLineColumn!;
+    }
+
+    for (const rawReexport of rawReexports) {
+      const {namespace} = rawReexport;
+
       if (rawPath in reexports) {
         addWarning(
           module,
           `Duplicate (namespace) reexport from \`${rawPath}\``,
-          start,
-          end,
+          rawReexport,
           source,
         );
       }
@@ -494,8 +499,7 @@ export const mergeImportsExports = (
         addError(
           module,
           `Duplicate exported name \`${namespace}\` (as namespace) in reexport from \`${rawPath}\``,
-          start,
-          end,
+          rawReexport,
           source,
         );
 
@@ -507,12 +511,19 @@ export const mergeImportsExports = (
           addError(
             module,
             `Duplicate default export by namespace in reexport from \`${rawPath}\``,
-            start,
-            end,
+            rawReexport,
             source,
           );
         } else {
+          const {start, startLineColumn, end, endLineColumn} = rawReexport;
+
           module.defaultExport = {start, end, from: rawPath as RawPath, namespace: true};
+
+          if (startLineColumn !== undefined) {
+            module.defaultExport.startLineColumn = startLineColumn;
+            module.defaultExport.endLineColumn = endLineColumn!;
+          }
+
           reexportObject.default = '*' as Name;
         }
       } else {
@@ -533,16 +544,25 @@ export const mergeImportsExports = (
 
   for (const rawPath in starReexports) {
     const rawReexports = starReexports[rawPath as RawPath]!;
+    const firstRawReexport = rawReexports[0];
     const reexportObject: Reexport =
       rawPath in reexports
         ? reexports[rawPath as RawPath]!
-        : {start: rawReexports[0]!.start, end: rawReexports[0]!.end};
+        : {start: firstRawReexport.start, end: firstRawReexport.end};
+
+    if (
+      firstRawReexport.startLineColumn !== undefined &&
+      reexportObject.startLineColumn === undefined
+    ) {
+      reexportObject.startLineColumn = firstRawReexport.startLineColumn;
+      reexportObject.endLineColumn = firstRawReexport.endLineColumn!;
+    }
 
     reexportObject.star = true;
 
-    for (const {start, end} of rawReexports) {
+    for (const rawReexport of rawReexports) {
       if (rawPath in reexports) {
-        addWarning(module, `Duplicate (star) reexport from \`${rawPath}\``, start, end, source);
+        addWarning(module, `Duplicate (star) reexport from \`${rawPath}\``, rawReexport, source);
       }
     }
 

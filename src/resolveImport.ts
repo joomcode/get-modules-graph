@@ -299,7 +299,7 @@ export const resolveImport = <SourceData, DependenciesData>(
       addError(
         module,
         `Duplicate reexported (through star) name \`${name}\` (from module \`${modulePathOfFirstResolved}\` and module \`${modulePath}\`) in module \`${path}\``,
-        reexportObject.start,
+        reexportObject,
       );
     }
   }

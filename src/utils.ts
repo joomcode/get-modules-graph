@@ -2,7 +2,15 @@ import {readdir} from 'node:fs/promises';
 
 import type {Dirent} from 'node:fs';
 
-import type {Context, DirectoryContent, DirectoryPath, ExcludeUndefined, Module} from './types';
+import type {
+  Context,
+  DirectoryContent,
+  DirectoryPath,
+  ExcludeUndefined,
+  LineColumn,
+  Module,
+  Position,
+} from './types';
 
 /**
  * Adds some error to module object.
@@ -10,21 +18,22 @@ import type {Context, DirectoryContent, DirectoryPath, ExcludeUndefined, Module}
 export const addError = (
   module: Module,
   message: string,
-  startIndex: number,
-  endIndex?: number,
+  position?: Position,
   source?: string,
 ): void => {
   var {errors} = module;
 
   errors ??= module.errors = {__proto__: null} as unknown as ExcludeUndefined<typeof errors>;
 
+  const {start = 0, startLineColumn, end} = position ?? {};
   const fullMessage =
-    endIndex === undefined || source === undefined
+    end === undefined || source === undefined
       ? message
-      : `${message}:\n${source.slice(startIndex, Math.min(endIndex, startIndex + 200))}`;
+      : `${message}:\n${source.slice(start, Math.min(end, start + 200))}`;
 
-  errors[startIndex] =
-    errors[startIndex] === undefined ? fullMessage : `${errors[startIndex]}\n${fullMessage}`;
+  const key = start === 0 ? ('1:1' as LineColumn) : (startLineColumn ?? start);
+
+  errors[key] = errors[key] === undefined ? fullMessage : `${errors[key]}\n${fullMessage}`;
 };
 
 /**
@@ -33,21 +42,22 @@ export const addError = (
 export const addWarning = (
   module: Module,
   message: string,
-  startIndex: number,
-  endIndex?: number,
+  position?: Position,
   source?: string,
 ): void => {
   var {warnings} = module;
 
   warnings ??= module.warnings = {__proto__: null} as unknown as ExcludeUndefined<typeof warnings>;
 
+  const {start = 0, startLineColumn, end} = position ?? {};
   const fullMessage =
-    endIndex === undefined || source === undefined
+    end === undefined || source === undefined
       ? message
-      : `${message}:\n${source.slice(startIndex, Math.min(endIndex, startIndex + 200))}`;
+      : `${message}:\n${source.slice(start, Math.min(end, start + 200))}`;
 
-  warnings[startIndex] =
-    warnings[startIndex] === undefined ? fullMessage : `${warnings[startIndex]}\n${fullMessage}`;
+  const key = start === 0 ? ('1:1' as LineColumn) : (startLineColumn ?? start);
+
+  warnings[key] = warnings[key] === undefined ? fullMessage : `${warnings[key]}\n${fullMessage}`;
 };
 
 export {parseImportsExports} from 'parse-imports-exports';

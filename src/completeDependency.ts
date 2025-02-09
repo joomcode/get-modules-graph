@@ -31,7 +31,6 @@ const completeNextDependency = (
         addError(
           module,
           'Unable to complete a module dependency because all of its dependencies have already been completed',
-          0,
         );
 
         continue;
