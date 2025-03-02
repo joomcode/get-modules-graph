@@ -13,7 +13,13 @@ export const processImportPackage = (
 ): void => {
   var importedPackage = packages[packagePath];
 
-  importedPackage ??= packages[packagePath] = {path: packagePath};
+  importedPackage ??= packages[packagePath] = {
+    expectedDefaultExport: undefined,
+    expectedExports: undefined,
+    importedByModules: undefined,
+    path: packagePath,
+    reexportedByModules: undefined,
+  };
 
   const importObject = module.imports![rawPath]!;
 

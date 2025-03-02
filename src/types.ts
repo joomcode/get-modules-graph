@@ -9,6 +9,7 @@ import type {
   Options as ParseOptions,
   Path as RawPath,
   Position,
+  With,
 } from 'parse-imports-exports';
 
 /**
@@ -79,40 +80,35 @@ export type Import = Position & {
   names?: Record<Name, {as?: Name; resolved?: ResolvedImport}>;
   packagePath?: PackagePath;
   resolvedDefault?: ResolvedImport;
+  with?: With;
 };
 
 export type {ImportsExports, LineColumn, ParseOptions, Position};
 
 /**
- * Merged imports, exports and reexports of module.
- */
-export type MergedImportsExports = {
-  defaultExport?: DefaultExport;
-  exports?: Record<Name, Export>;
-  imports?: Record<RawPath, Import>;
-  reexports?: Record<RawPath, Reexport>;
-};
-
-/**
  * Processed module (with optional dependencies).
  */
 export type Module<SourceData = unknown, DependenciesData = unknown> = {
-  errors?: Record<string, string>;
-  expectedDefaultExport?: Record<ModulePath, ExpectedExportKind>;
-  expectedExports?: Record<Name, Record<ModulePath, ExpectedExportKind>>;
-  importedByModules?: Record<ModulePath, Record<RawPath, true>>;
-  importedModules?: Record<ModulePath, Record<RawPath, true>>;
-  importedPackages?: Record<PackagePath, Record<RawPath, true>>;
+  defaultExport: DefaultExport | undefined;
+  dependenciesData: DependenciesData;
+  errors: Record<string, string> | undefined;
+  expectedDefaultExport: Record<ModulePath, ExpectedExportKind> | undefined;
+  expectedExports: Record<Name, Record<ModulePath, ExpectedExportKind>> | undefined;
+  exports: Record<Name, Export> | undefined;
+  importedByModules: Record<ModulePath, Record<RawPath, true>> | undefined;
+  importedModules: Record<ModulePath, Record<RawPath, true>> | undefined;
+  importedPackages: Record<PackagePath, Record<RawPath, true>> | undefined;
+  imports: Record<RawPath, Import> | undefined;
+  parseErrors: Record<LineColumn, string> | undefined;
   path: ModulePath;
-  parseErrors?: Record<LineColumn, string>;
-  reexportedByModules?: Record<ModulePath, Record<RawPath, true>>;
-  reexportedModules?: Record<ModulePath, Record<RawPath, true>>;
-  reexportedPackages?: Record<PackagePath, Record<RawPath, true>>;
+  reexportedByModules: Record<ModulePath, Record<RawPath, true>> | undefined;
+  reexportedModules: Record<ModulePath, Record<RawPath, true>> | undefined;
+  reexportedPackages: Record<PackagePath, Record<RawPath, true>> | undefined;
+  reexports: Record<RawPath, Reexport> | undefined;
+  sourceData: SourceData;
   uncompletedDependenciesCount: number;
-  warnings?: Record<string, string>;
-} & MergedImportsExports &
-  (IsEqual<DependenciesData, unknown> extends true ? {} : {dependenciesData: DependenciesData}) &
-  (IsEqual<SourceData, unknown> extends true ? {} : {sourceData: SourceData});
+  warnings: Record<string, string> | undefined;
+};
 
 /**
  * Exact relative path to module from current working directory (with extension).
@@ -260,11 +256,11 @@ export type Options<SourceData = unknown, DependenciesData = unknown> = Readonly
  * Processed package.
  */
 export type Package = {
-  expectedDefaultExport?: Record<ModulePath, ExpectedExportKind>;
-  expectedExports?: Record<Name, Record<ModulePath, ExpectedExportKind>>;
-  importedByModules?: Record<ModulePath, Record<RawPath, true>>;
+  expectedDefaultExport: Record<ModulePath, ExpectedExportKind> | undefined;
+  expectedExports: Record<Name, Record<ModulePath, ExpectedExportKind>> | undefined;
+  importedByModules: Record<ModulePath, Record<RawPath, true>> | undefined;
   path: PackagePath;
-  reexportedByModules?: Record<ModulePath, Record<RawPath, true>>;
+  reexportedByModules: Record<ModulePath, Record<RawPath, true>> | undefined;
 };
 
 /**
@@ -291,6 +287,7 @@ export type Reexport = Position & {
   resolvedDefault?: ResolvedImport;
   resolvedThroughStar?: Record<Name, ResolvedImport>;
   star?: true;
+  with?: With;
 };
 
 /**
@@ -321,7 +318,10 @@ export type Source = string;
  * Readonly type with recursive applying.
  * `DeepReadonly<{foo: {bar: 0}}>` = `{readonly foo: {readonly bar: 0}}`.
  */
-type DeepReadonly<Type> = {readonly [Key in keyof Type]: DeepReadonly<Type[Key]>};
+type DeepReadonly<Type> =
+  IsEqual<Type, unknown> extends true
+    ? Type
+    : {readonly [Key in keyof Type]: DeepReadonly<Type[Key]>};
 
 /**
  * Default export of module.

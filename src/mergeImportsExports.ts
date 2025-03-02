@@ -49,6 +49,10 @@ export const mergeImportsExports = (
       importObject.endLineColumn = firstRawImport.endLineColumn!;
     }
 
+    if (firstRawImport.with !== undefined) {
+      importObject.with = firstRawImport.with;
+    }
+
     imports[rawPath as RawPath] = importObject;
 
     for (const rawImport of rawImports) {
@@ -159,6 +163,10 @@ export const mergeImportsExports = (
       importObject.endLineColumn = firstRawImport.endLineColumn!;
     }
 
+    if (firstRawImport.with !== undefined && importObject.with === undefined) {
+      importObject.with = firstRawImport.with;
+    }
+
     for (const rawImport of rawImports) {
       if (rawPath in imports) {
         addWarning(module, `Duplicate (namespace) import from \`${rawPath}\``, rawImport, source);
@@ -248,6 +256,10 @@ export const mergeImportsExports = (
     ) {
       importObject.startLineColumn = firstRawImport.startLineColumn;
       importObject.endLineColumn = firstRawImport.endLineColumn!;
+    }
+
+    if (firstRawImport.with !== undefined && importObject.with === undefined) {
+      importObject.with = firstRawImport.with;
     }
 
     for (const rawImport of rawImports) {
@@ -391,6 +403,10 @@ export const mergeImportsExports = (
       reexportObject.endLineColumn = firstRawReexport.endLineColumn!;
     }
 
+    if (firstRawReexport.with !== undefined && reexportObject.with === undefined) {
+      reexportObject.with = firstRawReexport.with;
+    }
+
     reexports[rawPath as RawPath] = reexportObject;
 
     for (const rawReexport of rawReexports) {
@@ -483,6 +499,10 @@ export const mergeImportsExports = (
       reexportObject.endLineColumn = firstRawReexport.endLineColumn!;
     }
 
+    if (firstRawReexport.with !== undefined && reexportObject.with === undefined) {
+      reexportObject.with = firstRawReexport.with;
+    }
+
     for (const rawReexport of rawReexports) {
       const {namespace} = rawReexport;
 
@@ -556,6 +576,10 @@ export const mergeImportsExports = (
     ) {
       reexportObject.startLineColumn = firstRawReexport.startLineColumn;
       reexportObject.endLineColumn = firstRawReexport.endLineColumn!;
+    }
+
+    if (firstRawReexport.with !== undefined && reexportObject.with === undefined) {
+      reexportObject.with = firstRawReexport.with;
     }
 
     reexportObject.star = true;

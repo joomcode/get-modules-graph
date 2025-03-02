@@ -120,7 +120,7 @@ console.log(modulesGraph.packages);
 
 ## Install
 
-Requires [node](https://nodejs.org/en/) version 10 or higher:
+Requires [node](https://nodejs.org/en/) version 20 or higher:
 
 ```sh
 npm install get-modules-graph

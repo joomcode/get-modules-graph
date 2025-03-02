@@ -29,9 +29,26 @@ export const processModule = async (context: Context, modulePath: ModulePath): P
     return modules[modulePath]!;
   }
 
-  const module: Module & {dependenciesData?: unknown; sourceData?: unknown} = {
+  const module: Module = {
+    defaultExport: undefined,
+    dependenciesData: undefined,
+    errors: undefined,
+    expectedDefaultExport: undefined,
+    expectedExports: undefined,
+    exports: undefined,
+    importedByModules: undefined,
+    importedModules: undefined,
+    importedPackages: undefined,
+    imports: undefined,
+    parseErrors: undefined,
     path: modulePath,
+    reexportedByModules: undefined,
+    reexportedModules: undefined,
+    reexportedPackages: undefined,
+    reexports: undefined,
+    sourceData: undefined,
     uncompletedDependenciesCount: 0,
+    warnings: undefined,
   };
 
   var resolve: ((module: Module) => void) | undefined;

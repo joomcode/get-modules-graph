@@ -30,6 +30,8 @@ import "./baz";
 export * as foo from 'node:buffer';
 export * as default from 'node:buffer';
 
+export {default as packageJson} from '../package.json' with {type: 'json'};
+
 export {join} from 'node:path';
 
 export {resolveReexports as asResolveReexports} from '../src/index.js';
@@ -135,6 +137,10 @@ const modulesGraph = await getModulesGraph<number>({
       return `${cuttedSource}\nexport const {foo: destructuringFoo, bar: destructuringBar}: {foo?: object; bar?: object} = {};`;
     }
 
+    if (path.endsWith('.json')) {
+      return 'export default 0';
+    }
+
     return source;
   },
 });
@@ -164,10 +170,16 @@ visitModules: for (const modulePath in modules) {
 
   if (module.path === 'spec/foo.ts' || module.path === 'spec/bar.ts') {
     assert(
-      !('errors' in module) && !('parseErrors' in module) && 'warnings' in module,
+      module.errors === undefined &&
+        module.parseErrors === undefined &&
+        module.warnings !== undefined,
       `get module \`${module.path}\` with expected warnings`,
     );
-  } else if ('errors' in module || 'parseErrors' in module || 'warnings' in module) {
+  } else if (
+    module.errors !== undefined ||
+    module.parseErrors !== undefined ||
+    module.warnings !== undefined
+  ) {
     assert(false, 'gets modules without errors and warnings');
   }
 
@@ -264,6 +276,7 @@ const {resolved: resolvedPackageNamespace} =
   indexSpecModule.reexports!['node:buffer' as RawPath]!.namespaces!['foo' as Name]!;
 const {resolvedDefault: resolvedPackageDefault} =
   indexSpecModule.reexports!['node:buffer' as RawPath]!;
+const {with: withAttribute} = indexSpecModule.reexports!['../package.json' as RawPath]!;
 
 assert(
   defaultExport !== undefined &&
@@ -370,6 +383,14 @@ assert(
     resolvedPackageDefault.kind === 'namespace from package' &&
     resolvedPackageDefault.packagePath === 'node:buffer',
   '`resolveReexports` resolves default reexports from packages',
+);
+
+assert(
+  withAttribute !== undefined &&
+    'type' in withAttribute &&
+    Object.keys(withAttribute).length === 1 &&
+    withAttribute['type'] === 'json',
+  'import attributes (`with`) are correct',
 );
 
 assertEqualExceptNumbers(barModule, expectedBarModule, 'star exports from packages are correct');

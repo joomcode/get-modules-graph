@@ -5,13 +5,13 @@
   "author": "uid11",
   "bugs": "https://github.com/joomcode/get-modules-graph/issues",
   "dependencies": {
-    "parse-imports-exports": "0.2.3"
+    "parse-imports-exports": "0.2.4"
   },
   "devDependencies": {
     "@types/node": ">=22",
-    "prettier": ">=3.4",
+    "prettier": ">=3.5",
     "sort-json-keys": ">=1",
-    "typescript": ">=5.7"
+    "typescript": ">=5.8"
   },
   "exports": {
     ".": {

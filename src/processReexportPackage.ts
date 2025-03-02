@@ -13,9 +13,13 @@ export const processReexportPackage = (
 ): void => {
   var reexportedPackage = packages[packagePath];
 
-  if (reexportedPackage === undefined) {
-    packages[packagePath] = reexportedPackage = {path: packagePath};
-  }
+  reexportedPackage ??= packages[packagePath] = {
+    expectedDefaultExport: undefined,
+    expectedExports: undefined,
+    importedByModules: undefined,
+    path: packagePath,
+    reexportedByModules: undefined,
+  };
 
   const reexportObject = module.reexports![rawPath]!;
 
